@@ -28,21 +28,21 @@ export default function Footer() {
 
         <div className="relative mx-auto max-w-7xl px-6 py-16 sm:px-10 lg:px-16 lg:py-20">
 
-          {/* Top section */}
+          {/* Main Footer */}
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 25 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.2 }}
             transition={{
               duration: 0.7,
               ease: [0.22, 1, 0.36, 1],
             }}
-            className="flex flex-col gap-12 lg:flex-row lg:items-end lg:justify-between"
+            className="grid grid-cols-1 gap-14 lg:grid-cols-[1.5fr_1fr_1fr]"
           >
 
             {/* Brand */}
-            <div className="max-w-2xl">
-              <div className="mb-6 flex items-center gap-3">
+            <div className="max-w-xl">
+              <div className="mb-7 flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-sm font-black text-black">
                   CM
                 </div>
@@ -51,55 +51,76 @@ export default function Footer() {
                   <p className="text-sm font-bold tracking-wider text-white">
                     COMSATS
                   </p>
+
                   <p className="mt-1 text-[9px] tracking-[0.3em] text-white/40">
                     MEDIA CLUB
                   </p>
                 </div>
               </div>
+               <FooterColumn title="">
+                <p className="text-sm leading-6 text-white/40">
+                  COMSATS University Islamabad
+                  <br />
+                  Wah Campus
+                </p>
 
-              <h2 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl">
-                We capture.
-                <br />
-                <span className="text-white/30">
-                  We create.
-                </span>
-              </h2>
+                <p className="mt-3 text-[10px] tracking-[0.25em] text-white/25">
+                  PAKISTAN
+                </p>
+              </FooterColumn>
 
-              <p className="mt-6 max-w-lg text-sm leading-6 text-white/45 sm:text-base">
-                A creative platform for students to capture moments,
-                tell stories, develop skills, and showcase the creative
-                side of COMSATS.
-              </p>
+              <Link href="/join" className="mt-8 inline-block">
+                <motion.div
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="
+                    inline-flex
+                    items-center
+                    gap-4
+                    rounded-full
+                    bg-white
+                    px-6
+                    py-3.5
+                    text-sm
+                    font-semibold
+                    text-black
+                    transition
+                    hover:bg-white/90
+                  "
+                >
+                  Join the Club
+                  <span className="text-lg">→</span>
+                </motion.div>
+              </Link>
             </div>
 
-            {/* CTA */}
-            <Link href="/join">
-              <motion.div
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                className="
-                  inline-flex
-                  items-center
-                  gap-4
-                  rounded-full
-                  border border-white/10
-                  bg-white
-                  px-6
-                  py-3.5
-                  text-sm
-                  font-semibold
-                  text-black
-                  transition
-                  hover:bg-white/90
-                "
-              >
-                Join the Club
+            {/* Navigation */}
+            <FooterColumn title="Navigate">
+              {navLinks.map((link) => (
+                <FooterLink key={link.name} href={link.href}>
+                  {link.name}
+                </FooterLink>
+              ))}
+            </FooterColumn>
 
-                <span className="text-lg">
-                  →
-                </span>
-              </motion.div>
-            </Link>
+            {/* Connect + Campus */}
+            <div className="grid grid-cols-2 gap-8 sm:grid-cols-2 lg:grid-cols-1">
+
+              <FooterColumn title="Connect">
+                {socials.map((social) => (
+                  <FooterLink
+                    key={social.name}
+                    href={social.href}
+                  >
+                    {social.name}
+                  </FooterLink>
+                ))}
+              </FooterColumn>
+
+             
+
+            </div>
+
           </motion.div>
 
           {/* Divider */}
@@ -111,66 +132,8 @@ export default function Footer() {
             className="my-14 h-px origin-left bg-white/10"
           />
 
-          {/* Links */}
-          <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
-
-            {/* Navigation */}
-            <FooterColumn title="Explore">
-              {navLinks.map((link) => (
-                <FooterLink key={link.name} href={link.href}>
-                  {link.name}
-                </FooterLink>
-              ))}
-            </FooterColumn>
-
-            {/* Creative */}
-            <FooterColumn title="Creative">
-              <FooterLink href="/work">
-                Videography
-              </FooterLink>
-
-              <FooterLink href="/work">
-                Photography
-              </FooterLink>
-
-              <FooterLink href="/work">
-                Graphic Design
-              </FooterLink>
-
-              <FooterLink href="/work">
-                Content Creation
-              </FooterLink>
-            </FooterColumn>
-
-            {/* Social */}
-            <FooterColumn title="Connect">
-              {socials.map((social) => (
-                <FooterLink
-                  key={social.name}
-                  href={social.href}
-                >
-                  {social.name}
-                </FooterLink>
-              ))}
-            </FooterColumn>
-
-            {/* Location */}
-            <FooterColumn title="Campus">
-              <p className="text-sm leading-6 text-white/40">
-                COMSATS University Islamabad
-                <br />
-                Wah Campus
-              </p>
-
-              <p className="mt-4 text-xs tracking-wider text-white/25">
-                PAKISTAN
-              </p>
-            </FooterColumn>
-
-          </div>
-
           {/* Bottom */}
-          <div className="mt-14 flex flex-col gap-4 border-t border-white/10 pt-6 text-xs text-white/30 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-4 text-xs text-white/30 sm:flex-row sm:items-center sm:justify-between">
 
             <p>
               © {new Date().getFullYear()} COMSATS Media Club.
@@ -188,7 +151,6 @@ export default function Footer() {
     </footer>
   );
 }
-
 
 /* ---------------- Components ---------------- */
 
@@ -216,7 +178,6 @@ function FooterColumn({
     </motion.div>
   );
 }
-
 
 function FooterLink({
   href,

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
+import { Menu, X } from "lucide-react";
 
 const navItems = [
   { name: "Home", href: "/" },
@@ -17,166 +18,78 @@ export default function Navbar() {
 
   return (
     <>
+      {/* Navbar */}
       <motion.nav
-        initial={{ opacity: 0, y: -30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{
-          duration: 0.7,
-          ease: [0.22, 1, 0.36, 1],
-        }}
-        className="
-          absolute
-          top-6
-          left-1/2
-          z-50
-          w-[calc(100%-2rem)]
-          max-w-6xl
-          -translate-x-1/2
-          rounded-2xl
-          border
-          border-white/15
-          bg-black/40
-          px-4
-          py-3
-          shadow-2xl
-          backdrop-blur-xl
-        "
+        initial={{ y: -30, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.6 }}
+        className="fixed left-1/2 top-7 z-50 w-[calc(100%-1.5rem)] max-w-6xl -translate-x-1/2"
       >
-        <div className="flex items-center justify-between">
-          
-          {/* Logo */}
-          <Link
-            href="/"
-            className="group flex items-center gap-3"
-          >
-            <div className="
-              flex h-10 w-10
-              items-center justify-center
-              rounded-xl
-              bg-white
-              text-sm font-black
-              text-black
-              transition-transform
-              duration-300
-              group-hover:scale-105
-            ">
-              CM
+        <div className="rounded-2xl border border-white/10 bg-black/40 px-4 py-3 shadow-2xl backdrop-blur-xl sm:px-6">
+          <div className="flex items-center justify-between">
+
+            {/* Logo */}
+            <Link href="/" className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-sm font-bold text-white">
+                CM
+              </div>
+
+              <div className="hidden leading-tight sm:block">
+                <p className="text-sm font-semibold text-white">
+                  COMSATS
+                </p>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-white/50">
+                  Media Club
+                </p>
+              </div>
+            </Link>
+
+            {/* Desktop Navigation */}
+            <div className="hidden items-center gap-8 md:flex">
+              {navItems.map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className="group relative text-sm text-white/70 transition-colors duration-300 hover:text-white"
+                >
+                  {item.name}
+
+                  <span className="absolute -bottom-1 left-0 h-px w-0 bg-white transition-all duration-300 group-hover:w-full" />
+                </Link>
+              ))}
             </div>
 
-            <div className="hidden sm:block leading-none">
-              <p className="text-sm font-bold tracking-wider text-white">
-                COMSATS
-              </p>
-              <p className="mt-1 text-[9px] font-medium tracking-[0.25em] text-white/50">
-                MEDIA CLUB
-              </p>
-            </div>
-          </Link>
-
-          {/* Desktop Navigation */}
-          <div className="hidden items-center gap-1 md:flex">
-            {navItems.map((item, index) => (
-              <NavItem
-                key={item.name}
-                item={item}
-                index={index}
-              />
-            ))}
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white md:hidden"
+              aria-label="Toggle menu"
+            >
+              {isOpen ? <X size={19} /> : <Menu size={19} />}
+            </button>
           </div>
-
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="
-              flex h-10 w-10
-              items-center justify-center
-              rounded-xl
-              border border-white/10
-              bg-white/5
-              text-white
-              md:hidden
-            "
-            aria-label="Toggle menu"
-          >
-            <div className="space-y-1.5">
-              <motion.span
-                animate={{
-                  rotate: isOpen ? 45 : 0,
-                  y: isOpen ? 6 : 0,
-                }}
-                className="block h-0.5 w-5 bg-white"
-              />
-
-              <motion.span
-                animate={{
-                  opacity: isOpen ? 0 : 1,
-                }}
-                className="block h-0.5 w-5 bg-white"
-              />
-
-              <motion.span
-                animate={{
-                  rotate: isOpen ? -45 : 0,
-                  y: isOpen ? -6 : 0,
-                }}
-                className="block h-0.5 w-5 bg-white"
-              />
-            </div>
-          </button>
         </div>
 
         {/* Mobile Navigation */}
         <AnimatePresence>
           {isOpen && (
             <motion.div
-              initial={{
-                opacity: 0,
-                height: 0,
-              }}
-              animate={{
-                opacity: 1,
-                height: "auto",
-              }}
-              exit={{
-                opacity: 0,
-                height: 0,
-              }}
-              transition={{ duration: 0.3 }}
-              className="overflow-hidden md:hidden"
+              initial={{ opacity: 0, y: -10, height: 0 }}
+              animate={{ opacity: 1, y: 8, height: "auto" }}
+              exit={{ opacity: 0, y: -10, height: 0 }}
+              transition={{ duration: 0.25 }}
+              className="overflow-hidden rounded-2xl border border-white/10 bg-black/80 backdrop-blur-xl md:hidden"
             >
-              <div className="mt-4 border-t border-white/10 pt-3">
-                {navItems.map((item, index) => (
-                  <motion.div
+              <div className="flex flex-col p-3">
+                {navItems.map((item) => (
+                  <Link
                     key={item.name}
-                    initial={{
-                      opacity: 0,
-                      x: -15,
-                    }}
-                    animate={{
-                      opacity: 1,
-                      x: 0,
-                    }}
-                    transition={{
-                      delay: index * 0.06,
-                    }}
+                    href={item.href}
+                    onClick={() => setIsOpen(false)}
+                    className="rounded-xl px-4 py-3 text-sm text-white/70 transition hover:bg-white/10 hover:text-white"
                   >
-                    <Link
-                      href={item.href}
-                      onClick={() => setIsOpen(false)}
-                      className="
-                        block rounded-xl
-                        px-4 py-3
-                        text-sm
-                        font-medium
-                        text-white/70
-                        transition
-                        hover:bg-white/5
-                        hover:text-white
-                      "
-                    >
-                      {item.name}
-                    </Link>
-                  </motion.div>
+                    {item.name}
+                  </Link>
                 ))}
               </div>
             </motion.div>
@@ -184,65 +97,5 @@ export default function Navbar() {
         </AnimatePresence>
       </motion.nav>
     </>
-  );
-}
-
-function NavItem({
-  item,
-  index,
-}: {
-  item: {
-    name: string;
-    href: string;
-  };
-  index: number;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{
-        delay: 0.15 + index * 0.08,
-        duration: 0.5,
-      }}
-      className="relative"
-    >
-      <Link
-        href={item.href}
-        className="
-          group
-          relative
-          block
-          rounded-xl
-          px-4
-          py-2.5
-          text-sm
-          font-medium
-          text-white/60
-          transition-colors
-          duration-300
-          hover:text-white
-        "
-      >
-        {item.name}
-
-        {/* Hover line */}
-        <span
-          className="
-            absolute
-            bottom-1
-            left-1/2
-            h-[2px]
-            w-0
-            -translate-x-1/2
-            rounded-full
-            bg-white
-            transition-all
-            duration-300
-            group-hover:w-5
-          "
-        />
-      </Link>
-    </motion.div>
   );
 }
