@@ -9,6 +9,7 @@ const applicationSchema = new Schema(
     contactNumber: { type: String, required: true, trim: true },
     email: { type: String, required: true, lowercase: true, trim: true },
     areaOfInterest: { type: String, required: true, trim: true },
+    image: { type: String, trim: true },
     motivation: { type: String, required: true, trim: true },
     expectations: { type: String, trim: true },
     status: { type: String, enum: ["Pending", "Reviewed", "Accepted", "Rejected"], default: "Pending" },

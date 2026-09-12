@@ -66,6 +66,7 @@ export async function POST(request: Request) {
       contactNumber: getString("contactNumber").trim(),
       email,
       areaOfInterest: getString("areaOfInterest").trim(),
+      image: isNonEmptyString(body.image) ? body.image.trim() : undefined,
       motivation: getString("motivation").trim(),
       expectations: isNonEmptyString(body.expectations)
         ? body.expectations.trim()

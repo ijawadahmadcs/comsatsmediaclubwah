@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowDown, ArrowRight, Check } from "lucide-react";
 
@@ -19,6 +19,24 @@ export default function JoinPage() {
     type: "" as "success" | "error" | "",
     text: "",
   });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState("");
+
+  function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setFormMessage({ type: "error", text: "Please choose a JPEG, PNG, or WEBP image." });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setFormMessage({ type: "error", text: "The image must be 5 MB or smaller." });
+      return;
+    }
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+    setFormMessage({ type: "", text: "" });
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -51,6 +69,22 @@ export default function JoinPage() {
     setFormMessage({ type: "", text: "" });
 
     try {
+      let image = "";
+      if (imageFile) {
+        const uploadData = new FormData();
+        uploadData.append("file", imageFile);
+        const uploadResponse = await fetch("/api/applications/upload", {
+          method: "POST",
+          body: uploadData,
+        });
+        const uploadResult = await uploadResponse.json();
+        if (!uploadResponse.ok || !uploadResult.success) {
+          throw new Error(uploadResult.message || "Unable to upload image.");
+        }
+        image = uploadResult.image;
+      }
+
+      payload.image = image;
       const response = await fetch("/api/applications", {
         method: "POST",
         headers: {
@@ -65,6 +99,8 @@ export default function JoinPage() {
       }
 
       form.reset();
+      setImageFile(null);
+      setImagePreview("");
       setFormMessage({ type: "success", text: result.message });
     } catch (error) {
       setFormMessage({
@@ -268,6 +304,35 @@ export default function JoinPage() {
               </div>
             </div>
 
+
+            {/* MOTIVATION */}
+            <div>
+              <p className="mb-5 text-xs uppercase tracking-[0.25em] text-white/30">
+                Profile Image
+              </p>
+              <label className="block max-w-xl">
+                <span className="mb-2 block text-sm text-white/55">
+                  Upload a profile image (optional)
+                </span>
+                <input
+                  type="file"
+                  name="image"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleImageChange}
+                  className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4 text-sm text-white/60 file:mr-4 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:text-sm file:text-black"
+                />
+                {imagePreview && (
+                  <img
+                    src={imagePreview}
+                    alt="Selected profile preview"
+                    className="mt-4 h-24 w-24 rounded-xl border border-white/10 object-cover"
+                  />
+                )}
+                <p className="mt-2 text-xs text-white/30">
+                  JPEG, PNG, or WEBP up to 5 MB.
+                </p>
+              </label>
+            </div>
 
             {/* MOTIVATION */}
             <div>
