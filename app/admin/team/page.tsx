@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Pencil, Plus, Trash2, X } from "lucide-react";
 
@@ -74,6 +75,7 @@ export default function TeamManagementPage() {
   const [form, setForm] = useState<FormValues>(emptyForm);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const router = useRouter();
 
   async function loadMembers() {
     setIsLoading(true);
@@ -149,8 +151,12 @@ export default function TeamManagementPage() {
         setIsUploading(true);
         const uploadData = new FormData();
         uploadData.append("file", imageFile);
-        const uploadResponse = await fetch("/api/upload", { method: "POST", body: uploadData });
+        const uploadResponse = await fetch("/api/upload", { method: "POST", body: uploadData, credentials: "include" });
         const uploadResult = await uploadResponse.json();
+        if (uploadResponse.status === 401) {
+          router.replace("/admin/login");
+          throw new Error("Your admin session has expired. Please sign in again.");
+        }
         if (!uploadResponse.ok || !uploadResult.success) throw new Error(uploadResult.message || "Unable to upload image.");
         image = uploadResult.secure_url;
       }

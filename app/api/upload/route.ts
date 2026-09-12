@@ -5,8 +5,16 @@ import { requireApiAdmin } from "@/lib/auth";
 const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 const maxSize = 5 * 1024 * 1024;
 
+export const runtime = "nodejs";
+
 export async function POST(request: Request) {
-  if (!(await requireApiAdmin())) return NextResponse.json({ success: false, message: "Unauthorized." }, { status: 401 });
+  const admin = await requireApiAdmin();
+  if (!admin) {
+    console.warn("[UPLOAD] Unauthorized upload request", {
+      hasCookie: request.headers.get("cookie")?.includes("media_club_admin_session") ?? false,
+    });
+    return NextResponse.json({ success: false, message: "Your admin session has expired. Please sign in again." }, { status: 401 });
+  }
 
   try {
     const formData = await request.formData();

@@ -92,7 +92,18 @@ export function clearAdminSession(response: NextResponse) {
 export async function getCurrentAdmin(): Promise<AuthAdmin | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE)?.value;
-  return token ? verifyToken(token) : null;
+  if (!token) {
+    console.warn("[AUTH] Session cookie not found");
+    return null;
+  }
+  try {
+    const admin = verifyToken(token);
+    if (!admin) console.warn("[AUTH] Session cookie invalid or expired");
+    return admin;
+  } catch (error) {
+    console.error("[AUTH] Session verification failed", error instanceof Error ? { name: error.name, message: error.message } : { name: "UnknownError" });
+    return null;
+  }
 }
 
 export async function requireAdmin() {
@@ -131,14 +142,22 @@ export async function requireApiAdmin() {
   try {
     await connectToDatabase();
     const admin = await Admin.findById(sessionAdmin.id).lean();
-    if (!admin || !admin.isActive) return null;
+    if (!admin) {
+      console.warn("[AUTH] Session admin no longer exists");
+      return null;
+    }
+    if (!admin.isActive) {
+      console.warn("[AUTH] Session admin is inactive");
+      return null;
+    }
     return {
       id: admin._id.toString(),
       registrationNumber: admin.registrationNumber,
       name: admin.name,
       role: admin.role as AuthAdmin["role"],
     } satisfies AuthAdmin;
-  } catch {
+  } catch (error) {
+    console.error("[AUTH] Protected admin lookup failed", error instanceof Error ? { name: error.name, message: error.message.replace(/(mongodb(?:\+srv)?:\/\/)[^\s]+/gi, "$1[redacted]") } : { name: "UnknownError" });
     return null;
   }
 }
