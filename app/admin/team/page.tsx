@@ -10,7 +10,9 @@ type TeamMember = {
   role: string;
   department?: string;
   registrationNumber?: string;
+  contactNumber?: string;
   semester?: number;
+  areaOfInterest?: string;
   bio?: string;
   image?: string;
   instagram?: string;
@@ -34,7 +36,9 @@ const emptyForm: FormValues = {
   role: "",
   department: "",
   registrationNumber: "",
+  contactNumber: "",
   semester: undefined,
+  areaOfInterest: "",
   bio: "",
   image: "",
   instagram: "",
@@ -48,7 +52,9 @@ const fields: { key: keyof FormValues; label: string; type?: string; wide?: bool
   { key: "role", label: "Role *" },
   { key: "department", label: "Department" },
   { key: "registrationNumber", label: "Registration Number" },
+  { key: "contactNumber", label: "Contact Number" },
   { key: "semester", label: "Semester", type: "number" },
+  { key: "areaOfInterest", label: "Area of Interest" },
   { key: "order", label: "Display Order", type: "number" },
   { key: "instagram", label: "Instagram URL" },
   { key: "facebook", label: "Facebook URL" },
@@ -219,7 +225,16 @@ export default function TeamManagementPage() {
           </div>
         )}
 
-        {isLoading ? <div className="py-24 text-center text-sm text-white/40">Loading team members...</div> : members.length === 0 ? <div className="py-24 text-center"><p className="text-sm text-white/40">No team members yet.</p><button type="button" onClick={openAddForm} className="mt-5 inline-flex items-center gap-2 rounded-full border border-white/15 px-5 py-3 text-sm text-white transition hover:bg-white/10"><Plus size={16} /> Add Member</button></div> : <div className="mt-8 overflow-x-auto"><table className="w-full min-w-[760px] text-left text-sm"><thead className="border-b border-white/10 text-xs uppercase tracking-[0.18em] text-white/30"><tr><th className="pb-4 pr-5">Member</th><th className="pb-4 pr-5">Role</th><th className="pb-4 pr-5">Department</th><th className="pb-4 pr-5">Semester</th><th className="pb-4 pr-5">Order</th><th className="pb-4 text-right">Actions</th></tr></thead><tbody>{members.map((member) => <tr key={member._id} className="border-b border-white/[0.06] last:border-0"><td className="py-5 pr-5"><div className="flex items-center gap-3"><div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/[0.05] text-sm text-white/40">{member.image ? <img src={member.image} alt="" className="h-full w-full object-cover" /> : member.name.charAt(0).toUpperCase()}</div><span className="font-medium text-white/85">{member.name}</span></div></td><td className="py-5 pr-5 text-white/60">{member.role}</td><td className="py-5 pr-5 text-white/45">{member.department || "-"}</td><td className="py-5 pr-5 text-white/45">{member.semester || "-"}</td><td className="py-5 pr-5 text-white/45">{member.order}</td><td className="py-5 text-right"><div className="inline-flex gap-2"><button type="button" onClick={() => openEditForm(member)} aria-label={`Edit ${member.name}`} className="rounded-lg border border-white/10 p-2 text-white/50 transition hover:bg-white/10 hover:text-white"><Pencil size={15} /></button><button type="button" onClick={() => setMemberToDelete(member)} aria-label={`Delete ${member.name}`} className="rounded-lg border border-red-400/15 p-2 text-red-300/70 transition hover:bg-red-400/10 hover:text-red-200"><Trash2 size={15} /></button></div></td></tr>)}</tbody></table></div>}
+        {isLoading ? <div className="py-24 text-center text-sm text-white/40">Loading team members...</div> : members.length === 0 ? <div className="py-24 text-center"><p className="text-sm text-white/40">No team members yet.</p><button type="button" onClick={openAddForm} className="mt-5 inline-flex items-center gap-2 rounded-full border border-white/15 px-5 py-3 text-sm text-white transition hover:bg-white/10"><Plus size={16} /> Add Member</button></div> : <>
+          <div className="mt-8 grid gap-3 md:hidden">
+            {members.map((member) => <div key={member._id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+              <div className="flex items-start justify-between gap-3"><div className="flex min-w-0 items-center gap-3"><div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/[0.05] text-sm text-white/40">{member.image ? <img src={member.image} alt="" className="h-full w-full object-cover" /> : member.name.charAt(0).toUpperCase()}</div><div className="min-w-0"><p className="truncate font-medium text-white/85">{member.name}</p><p className="mt-1 truncate text-xs text-white/45">{member.role}</p></div></div><span className="text-xs text-white/35">#{member.order}</span></div>
+              <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-white/45"><span>{member.department || "No department"}</span><span>{member.semester ? `Semester ${member.semester}` : "No semester"}</span><span className="col-span-2">{member.contactNumber || "No contact number"}</span></div>
+              <div className="mt-4 flex gap-2 border-t border-white/10 pt-3"><button type="button" onClick={() => openEditForm(member)} className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 py-2.5 text-xs text-white/70"><Pencil size={14} /> Edit</button><button type="button" onClick={() => setMemberToDelete(member)} className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-red-400/15 py-2.5 text-xs text-red-200"><Trash2 size={14} /> Remove</button></div>
+            </div>)}
+          </div>
+          <div className="mt-8 hidden overflow-x-auto md:block"><table className="w-full min-w-[760px] text-left text-sm"><thead className="border-b border-white/10 text-xs uppercase tracking-[0.18em] text-white/30"><tr><th className="pb-4 pr-5">Member</th><th className="pb-4 pr-5">Role</th><th className="pb-4 pr-5">Department</th><th className="pb-4 pr-5">Semester</th><th className="pb-4 pr-5">Order</th><th className="pb-4 text-right">Actions</th></tr></thead><tbody>{members.map((member) => <tr key={member._id} className="border-b border-white/[0.06] last:border-0"><td className="py-5 pr-5"><div className="flex items-center gap-3"><div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/[0.05] text-sm text-white/40">{member.image ? <img src={member.image} alt="" className="h-full w-full object-cover" /> : member.name.charAt(0).toUpperCase()}</div><span className="font-medium text-white/85">{member.name}</span></div></td><td className="py-5 pr-5 text-white/60">{member.role}</td><td className="py-5 pr-5 text-white/45">{member.department || "-"}</td><td className="py-5 pr-5 text-white/45">{member.semester || "-"}</td><td className="py-5 pr-5 text-white/45">{member.order}</td><td className="py-5 text-right"><div className="inline-flex gap-2"><button type="button" onClick={() => openEditForm(member)} aria-label={`Edit ${member.name}`} className="rounded-lg border border-white/10 p-2 text-white/50 transition hover:bg-white/10 hover:text-white"><Pencil size={15} /></button><button type="button" onClick={() => setMemberToDelete(member)} aria-label={`Delete ${member.name}`} className="rounded-lg border border-red-400/15 p-2 text-red-300/70 transition hover:bg-red-400/10 hover:text-red-200"><Trash2 size={15} /></button></div></td></tr>)}</tbody></table></div>
+        </>}
       </section>
 
       <AnimatePresence>

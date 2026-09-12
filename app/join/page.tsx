@@ -348,11 +348,11 @@ export default function JoinPage() {
 
 
       {/* WHAT WE VALUE */}
-      <section className="mt-4 sm:mt-5">
+      <section className="m-4 mt-4 sm:mt-5">
         <div className="rounded-[2rem] border border-white/10 bg-[#0b0d10] px-6 py-20 sm:px-10 lg:px-16 lg:py-28">
 
           <p className="text-xs uppercase tracking-[0.3em] text-white/35">
-            03 — What We Value
+            What We Value
           </p>
 
           <h2 className="mt-6 max-w-5xl text-4xl font-semibold leading-[0.95] tracking-tight sm:text-6xl lg:text-7xl">

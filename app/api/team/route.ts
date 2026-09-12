@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import connectToDatabase from "@/lib/mongodb";
 import TeamMember from "@/models/TeamMember";
+import Application from "@/models/Application";
 import { requireApiAdmin } from "@/lib/auth";
 
 const optionalStringFields = [
   "department",
   "registrationNumber",
+  "contactNumber",
+  "areaOfInterest",
   "bio",
   "image",
   "instagram",
@@ -58,9 +61,15 @@ export async function GET() {
   try {
     console.info("[TEAM] Public team request received");
     await connectToDatabase();
-    const members = await TeamMember.find().sort({ order: 1, createdAt: 1 }).lean();
-    console.info("[TEAM] Team lookup completed", { count: members.length });
-    return NextResponse.json({ success: true, members });
+    const [members, acceptedApplicants] = await Promise.all([
+      TeamMember.find().sort({ order: 1, createdAt: 1 }).lean(),
+      Application.find({ status: "Accepted" })
+        .select("fullName registrationNumber department areaOfInterest")
+        .sort({ createdAt: 1 })
+        .lean(),
+    ]);
+    console.info("[TEAM] Team lookup completed", { count: members.length, acceptedCount: acceptedApplicants.length });
+    return NextResponse.json({ success: true, members, acceptedApplicants });
   } catch (error) {
     console.error("[TEAM GET ERROR]", error instanceof Error ? { name: error.name, message: error.message.replace(/(mongodb(?:\+srv)?:\/\/)[^\s]+/gi, "$1[redacted]") } : { name: "UnknownError" });
     return NextResponse.json(

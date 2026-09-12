@@ -102,7 +102,7 @@ export default function WorkPage() {
       </section>
 
       {/* FILTERS */}
-      <section className="mt-4 sm:mt-5">
+      {/* <section className="mt-4 sm:mt-5">
         <div className="rounded-[2rem] border border-white/10 bg-[#0b0d10] px-6 py-7 sm:px-10 lg:px-16">
           <div className="flex flex-wrap gap-2">
             {categories.map((category, index) => (
@@ -119,7 +119,7 @@ export default function WorkPage() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* WORK GRID */}
       <section className="mt-4 sm:mt-5">
@@ -213,7 +213,7 @@ export default function WorkPage() {
               campus life.
             </p>
 
-            <Link
+            {/* <Link
               href="/join"
               className="group inline-flex w-fit items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition hover:bg-white/90"
             >
@@ -222,7 +222,7 @@ export default function WorkPage() {
                 size={16}
                 className="transition-transform group-hover:translate-x-1"
               />
-            </Link>
+            </Link> */}
           </div>
         </div>
       </section>
