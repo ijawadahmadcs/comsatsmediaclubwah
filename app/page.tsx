@@ -70,6 +70,107 @@ export default function Home() {
   return (
    <>
    <Hero/>
+{/* Faculty Head Vision */}
+<section className=" m-6 relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#0b0d10]">
+  <div className="grid min-h-[650px] lg:grid-cols-[0.9fr_1.1fr]">
+
+    {/* Image */}
+    <motion.div
+      initial={{ opacity: 0, scale: 1.05 }}
+      whileInView={{ opacity: 1, scale: 1 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.8 }}
+      className="relative min-h-[500px] lg:min-h-full"
+    >
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{
+          backgroundImage: "url('/faculty-head.png')",
+        }}
+      />
+
+      {/* Dark overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-[#0b0d10] via-black/20 to-transparent lg:bg-gradient-to-r lg:from-transparent lg:via-transparent lg:to-[#0b0d10]" />
+
+      {/* Blue glow */}
+      <div className="absolute -bottom-20 -left-20 h-72 w-72 rounded-full bg-blue-600/20 blur-[120px]" />
+
+      {/* Label */}
+      <div className="absolute bottom-8 left-8">
+        <p className="text-xs font-medium uppercase tracking-[0.3em] text-white/50">
+          Faculty Head
+        </p>
+        <p className="mt-2 text-lg font-medium text-white">
+          COMSATS Media Club
+        </p>
+      </div>
+    </motion.div>
+
+    {/* Content */}
+    <div className="relative flex flex-col justify-center px-8 py-16 sm:px-12 lg:px-16 xl:px-20">
+
+      {/* Small heading */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6 }}
+      >
+        <span className="text-xs font-medium uppercase tracking-[0.3em] text-blue-400">
+          A Message From Our Faculty Head
+        </span>
+      </motion.div>
+
+      {/* Quote */}
+      <motion.blockquote
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6, delay: 0.15 }}
+        className="mt-10 max-w-2xl border-l border-blue-400/50 pl-6 text-base leading-8 text-white/60 sm:text-lg"
+      >
+        The Media Club is an opportunity for students to bring their
+        creativity, ideas, and talent forward. Take every opportunity
+        to learn something new, try something different, and discover
+        what you can create.
+
+        <br />
+        <br />
+
+        You do not have to be perfect to create something meaningful.
+        What matters is your effort, creativity, and willingness to
+        learn. Work together, support one another, and make every
+        experience memorable.
+      </motion.blockquote>
+
+      {/* Attribution */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6, delay: 0.3 }}
+        className="mt-10"
+      >
+        <div className="h-px w-12 bg-blue-400/60" />
+
+        <p className="mt-5 text-lg font-medium text-white">
+          Dr. Faisal Shafique Butt
+        </p>
+
+        <p className="mt-1 text-sm text-white/40">
+          Faculty Head, COMSATS Media Club
+        </p>
+      </motion.div>
+
+      {/* Decorative quote mark */}
+      <span className="pointer-events-none absolute right-8 top-8 text-[160px] font-serif leading-none text-white/[0.025] select-none">
+        “
+      </span>
+
+    </div>
+  </div>
+</section>
+
     <section className="mt-4 sm:mt-5 p-5">
         <div className="rounded-[2rem] border border-white/10 bg-[#0b0d10] px-6 py-16 sm:px-10 lg:px-16 lg:py-24">
           <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr]">

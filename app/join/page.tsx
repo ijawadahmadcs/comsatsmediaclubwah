@@ -10,10 +10,7 @@ const interests = [
   "Graphic Design",
   "Video Editing",
   "Content Creation",
-  "Digital Storytelling",
-  "Social Media",
-  "Writing",
-  "Other",
+  "Digital Storytelling"
 ];
 
 export default function JoinPage() {
