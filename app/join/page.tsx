@@ -1,5 +1,6 @@
 "use client";
 
+import { FormEvent, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowDown, ArrowRight, Check } from "lucide-react";
 
@@ -16,6 +17,70 @@ const interests = [
 ];
 
 export default function JoinPage() {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formMessage, setFormMessage] = useState({
+    type: "" as "success" | "error" | "",
+    text: "",
+  });
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (isSubmitting) {
+      return;
+    }
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const values = Object.fromEntries(formData.entries());
+    const payload = Object.fromEntries(
+      Object.entries({
+        fullName: values.name,
+        registrationNumber: values.registrationNumber,
+        department: values.department,
+        semester: values.semester,
+        contactNumber: values.phone,
+        email: values.email,
+        areaOfInterest: values.interest,
+        motivation: values.motivation,
+        expectations: values.expectations,
+      }).map(([key, value]) => [
+        key,
+        typeof value === "string" ? value.trim() : value,
+      ]),
+    );
+
+    setIsSubmitting(true);
+    setFormMessage({ type: "", text: "" });
+
+    try {
+      const response = await fetch("/api/applications", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || "Unable to submit application.");
+      }
+
+      form.reset();
+      setFormMessage({ type: "success", text: result.message });
+    } catch (error) {
+      setFormMessage({
+        type: "error",
+        text: error instanceof Error
+          ? error.message
+          : "Unable to submit application. Please try again.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   return (
     <>
       {/* APPLICATION FORM */}
@@ -47,7 +112,7 @@ export default function JoinPage() {
           </div>
 
 
-          <form className="mt-14 space-y-10">
+          <form className="mt-14 space-y-10" onSubmit={handleSubmit}>
 
             {/* PERSONAL INFORMATION */}
             <div>
@@ -256,11 +321,21 @@ export default function JoinPage() {
                 part of the COMSATS Media Club.
               </p>
 
+              {formMessage.text && (
+                <p
+                  role="status"
+                  className={`mb-6 text-sm ${formMessage.type === "success" ? "text-emerald-300" : "text-red-300"}`}
+                >
+                  {formMessage.text}
+                </p>
+              )}
+
               <button
                 type="submit"
-                className="group inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-medium text-black transition hover:bg-white/90"
+                disabled={isSubmitting}
+                className="group inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-medium text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Submit Application
+                {isSubmitting ? "Submitting..." : "Submit Application"}
                 <ArrowRight
                   size={16}
                   className="transition-transform group-hover:translate-x-1"
