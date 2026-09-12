@@ -20,9 +20,20 @@ type SessionPayload = AuthAdmin & { exp: number };
 function getSessionSecret() {
   const secret = process.env.ADMIN_SESSION_SECRET;
   if (!secret || secret.length < 32) {
-    throw new Error("ADMIN_SESSION_SECRET must be at least 32 characters long");
+    throw new Error("ADMIN_SESSION_SECRET is not configured");
   }
   return secret;
+}
+
+export function validateAuthRuntimeConfig() {
+  if (!process.env.MONGODB_URI) throw new Error("MONGODB_URI is not configured");
+  getSessionSecret();
+  console.info("[AUTH] Runtime configuration validated", {
+    hasMongoUri: true,
+    hasSessionSecret: true,
+    hasInitialAdminRegistrationNumber: Boolean(process.env.INITIAL_ADMIN_REGISTRATION_NUMBER),
+    hasInitialAdminPassword: Boolean(process.env.INITIAL_ADMIN_PASSWORD),
+  });
 }
 
 function encode(value: string) {
@@ -59,6 +70,7 @@ function verifyToken(token: string): SessionPayload | null {
 
 export function createAdminSession(admin: AuthAdmin) {
   const token = createToken({ ...admin, exp: Math.floor(Date.now() / 1000) + SESSION_MAX_AGE });
+  console.info("[AUTH] Session signing completed");
   return { token, maxAge: SESSION_MAX_AGE };
 }
 
@@ -97,10 +109,13 @@ export async function requireSuperAdmin() {
 
 export async function authenticateAdmin(registrationNumber: string, password: string) {
   await connectToDatabase();
+  console.info("[AUTH] MongoDB connected");
   const admin = await Admin.findOne({ registrationNumber: registrationNumber.trim().toUpperCase() });
+  console.info("[AUTH] Admin lookup completed", { found: Boolean(admin), active: Boolean(admin?.isActive) });
   if (!admin || !admin.isActive) return null;
   const bcrypt = await import("bcryptjs");
   const valid = await bcrypt.compare(password, admin.passwordHash);
+  console.info("[AUTH] Password verification completed", { valid });
   if (!valid) return null;
   return {
     id: admin._id.toString(),

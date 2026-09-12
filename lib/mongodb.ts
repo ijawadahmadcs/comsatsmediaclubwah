@@ -4,7 +4,7 @@ function getMongoUri() {
   const uri = process.env.MONGODB_URI;
 
   if (!uri) {
-    throw new Error("Please define the MONGODB_URI environment variable");
+    throw new Error("MONGODB_URI is not configured");
   }
 
   return uri;
@@ -32,7 +32,10 @@ export default async function connectToDatabase() {
   }
 
   if (!cached.promise) {
-    cached.promise = mongoose.connect(getMongoUri());
+    cached.promise = mongoose.connect(getMongoUri()).catch((error) => {
+      cached.promise = null;
+      throw error;
+    });
   }
 
   cached.conn = await cached.promise;

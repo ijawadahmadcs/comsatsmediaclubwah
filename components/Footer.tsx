@@ -12,8 +12,8 @@ const navLinks = [
 ];
 
 const socials = [
-  { name: "Instagram", href: "#" },
-  { name: "Facebook", href: "#" },
+  { name: "Instagram", href: "https://www.instagram.com/comsatsmediaclubwah?stkn=czNmbXZpZ3Q5b3h1" },
+  { name: "Facebook", href: "https://www.facebook.com/share/14nSjUdizRX/" },
   { name: "LinkedIn", href: "#" },
 ];
 
