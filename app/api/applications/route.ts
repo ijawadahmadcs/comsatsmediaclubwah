@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import connectToDatabase from "@/lib/mongodb";
 import Application from "@/models/Application";
+import { requireApiAdmin } from "@/lib/auth";
 
 const requiredFields = [
   "fullName",
@@ -79,5 +80,19 @@ export async function POST(request: Request) {
       { success: false, message: "Unable to submit application." },
       { status: 500 },
     );
+  }
+}
+
+export async function GET() {
+  if (!(await requireApiAdmin())) {
+    return NextResponse.json({ success: false, message: "Unauthorized." }, { status: 401 });
+  }
+
+  try {
+    await connectToDatabase();
+    const applications = await Application.find().sort({ createdAt: -1 }).lean();
+    return NextResponse.json({ success: true, applications: applications.map((application) => ({ ...application, status: application.status || "Pending" })) });
+  } catch {
+    return NextResponse.json({ success: false, message: "Unable to load applications." }, { status: 500 });
   }
 }

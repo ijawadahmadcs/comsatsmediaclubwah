@@ -11,7 +11,9 @@ const applicationSchema = new Schema(
     areaOfInterest: { type: String, required: true, trim: true },
     motivation: { type: String, required: true, trim: true },
     expectations: { type: String, trim: true },
+    status: { type: String, enum: ["Pending", "Reviewed", "Accepted", "Rejected"], default: "Pending" },
     createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now },
   },
   { versionKey: false },
 );

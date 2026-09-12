@@ -147,7 +147,7 @@ export default function Home() {
             <div
               className="min-h-[420px] rounded-[1.5rem] border border-white/10 bg-cover bg-center"
               style={{
-                backgroundImage: "url('/work/work-1.jpg')",
+                backgroundImage: "url('/work/work-1.jpeg')",
               }}
             />
 
@@ -155,14 +155,14 @@ export default function Home() {
               <div
                 className="min-h-[205px] rounded-[1.5rem] border border-white/10 bg-cover bg-center"
                 style={{
-                  backgroundImage: "url('/work/work-2.jpg')",
+                  backgroundImage: "url('/work/work-2.jpeg')",
                 }}
               />
 
               <div
                 className="min-h-[205px] rounded-[1.5rem] border border-white/10 bg-cover bg-center"
                 style={{
-                  backgroundImage: "url('/work/work-3.jpg')",
+                  backgroundImage: "url('/work/work-3.jpeg')",
                 }}
               />
             </div>

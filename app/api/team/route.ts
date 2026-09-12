@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import connectToDatabase from "@/lib/mongodb";
 import TeamMember from "@/models/TeamMember";
+import { requireApiAdmin } from "@/lib/auth";
 
 const optionalStringFields = [
   "department",
@@ -67,6 +68,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  if (!(await requireApiAdmin())) {
+    return NextResponse.json({ success: false, message: "Unauthorized." }, { status: 401 });
+  }
   try {
     const body: unknown = await request.json();
     if (!isRecord(body)) {

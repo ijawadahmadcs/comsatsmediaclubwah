@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import connectToDatabase from "@/lib/mongodb";
 import TeamMember from "@/models/TeamMember";
+import { requireApiAdmin } from "@/lib/auth";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -77,6 +78,9 @@ export async function GET(_request: Request, { params }: RouteContext) {
 }
 
 export async function PUT(request: Request, { params }: RouteContext) {
+  if (!(await requireApiAdmin())) {
+    return NextResponse.json({ success: false, message: "Unauthorized." }, { status: 401 });
+  }
   const { id } = await params;
   const objectId = getObjectId(id);
   if (!objectId) {
@@ -108,6 +112,9 @@ export async function PUT(request: Request, { params }: RouteContext) {
 }
 
 export async function DELETE(_request: Request, { params }: RouteContext) {
+  if (!(await requireApiAdmin())) {
+    return NextResponse.json({ success: false, message: "Unauthorized." }, { status: 401 });
+  }
   const { id } = await params;
   const objectId = getObjectId(id);
   if (!objectId) {
