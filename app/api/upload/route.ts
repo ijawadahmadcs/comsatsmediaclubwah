@@ -8,6 +8,7 @@ const maxSize = 5 * 1024 * 1024;
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  console.info("[UPLOAD] Team image upload request received");
   const admin = await requireApiAdmin();
   if (!admin) {
     console.warn("[UPLOAD] Unauthorized upload request", {
@@ -24,15 +25,22 @@ export async function POST(request: Request) {
     }
     if (file.size > maxSize) return NextResponse.json({ success: false, message: "Images must be 5 MB or smaller." }, { status: 400 });
 
+    console.info("[UPLOAD] File validation completed", { type: file.type, size: file.size });
     const buffer = Buffer.from(await file.arrayBuffer());
     const result = await new Promise<{ secure_url: string; public_id: string }>((resolve, reject) => {
-      getCloudinary().uploader.upload_stream({ folder: "media-club/team", resource_type: "image" }, (error, uploadResult) => {
-        if (error || !uploadResult?.secure_url || !uploadResult.public_id) reject(error);
-        else resolve({ secure_url: uploadResult.secure_url, public_id: uploadResult.public_id });
-      }).end(buffer);
+      try {
+        getCloudinary().uploader.upload_stream({ folder: "media-club/team", resource_type: "image" }, (error, uploadResult) => {
+          if (error || !uploadResult?.secure_url || !uploadResult.public_id) reject(error || new Error("Cloudinary returned no upload result"));
+          else resolve({ secure_url: uploadResult.secure_url, public_id: uploadResult.public_id });
+        }).end(buffer);
+      } catch (error) {
+        reject(error);
+      }
     });
+    console.info("[UPLOAD] Cloudinary upload completed", { hasSecureUrl: Boolean(result.secure_url) });
     return NextResponse.json({ success: true, ...result });
-  } catch {
+  } catch (error) {
+    console.error("[UPLOAD ERROR]", error instanceof Error ? { name: error.name, message: error.message.replace(/(api_secret|api_key|cloudinary:\/\/)[^\s]+/gi, "[redacted]") } : { name: "UnknownError" });
     return NextResponse.json({ success: false, message: "Unable to upload image." }, { status: 500 });
   }
 }
