@@ -56,10 +56,13 @@ const parseMember = (body: Record<string, unknown>) => {
 
 export async function GET() {
   try {
+    console.info("[TEAM] Public team request received");
     await connectToDatabase();
     const members = await TeamMember.find().sort({ order: 1, createdAt: 1 }).lean();
+    console.info("[TEAM] Team lookup completed", { count: members.length });
     return NextResponse.json({ success: true, members });
-  } catch {
+  } catch (error) {
+    console.error("[TEAM GET ERROR]", error instanceof Error ? { name: error.name, message: error.message.replace(/(mongodb(?:\+srv)?:\/\/)[^\s]+/gi, "$1[redacted]") } : { name: "UnknownError" });
     return NextResponse.json(
       { success: false, message: "Unable to load team members." },
       { status: 500 },

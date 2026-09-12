@@ -1,10 +1,14 @@
 import mongoose from "mongoose";
 
 function getMongoUri() {
-  const uri = process.env.MONGODB_URI;
+  const uri = process.env.MONGODB_URI?.trim();
 
   if (!uri) {
     throw new Error("MONGODB_URI is not configured");
+  }
+
+  if (!uri.startsWith("mongodb://") && !uri.startsWith("mongodb+srv://")) {
+    throw new Error("MONGODB_URI has an invalid scheme");
   }
 
   return uri;
@@ -27,15 +31,35 @@ const cached = globalWithMongoose.mongoose ?? {
 globalWithMongoose.mongoose = cached;
 
 export default async function connectToDatabase() {
-  if (cached.conn) {
+  if (cached.conn && mongoose.connection.readyState === 1) {
     return cached.conn;
   }
 
+  if (cached.conn && mongoose.connection.readyState !== 1) {
+    cached.conn = null;
+  }
+
   if (!cached.promise) {
-    cached.promise = mongoose.connect(getMongoUri()).catch((error) => {
-      cached.promise = null;
-      throw error;
-    });
+    const uri = getMongoUri();
+    cached.promise = mongoose
+      .connect(uri, {
+        serverSelectionTimeoutMS: 10000,
+        connectTimeoutMS: 10000,
+        maxPoolSize: 10,
+      })
+      .then((connection) => {
+        console.info("[DB] MongoDB connected", { readyState: connection.connection.readyState });
+        return connection;
+      })
+      .catch((error) => {
+        cached.promise = null;
+        const message = error instanceof Error ? error.message : "Unknown MongoDB error";
+        console.error("[DB] MongoDB connection failed", {
+          name: error instanceof Error ? error.name : "UnknownError",
+          message: message.replace(/(mongodb(?:\+srv)?:\/\/)[^\s]+/gi, "$1[redacted]"),
+        });
+        throw error;
+      });
   }
 
   cached.conn = await cached.promise;

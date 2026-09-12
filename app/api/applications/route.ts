@@ -55,6 +55,7 @@ export async function POST(request: Request) {
   }
 
   try {
+    console.info("[APPLICATION] Public submission received");
     await connectToDatabase();
 
     await Application.create({
@@ -70,12 +71,14 @@ export async function POST(request: Request) {
         ? body.expectations.trim()
         : undefined,
     });
+    console.info("[APPLICATION] Submission saved");
 
     return NextResponse.json(
       { success: true, message: "Application submitted successfully." },
       { status: 201 },
     );
-  } catch {
+  } catch (error) {
+    console.error("[APPLICATION POST ERROR]", error instanceof Error ? { name: error.name, message: error.message.replace(/(mongodb(?:\+srv)?:\/\/)[^\s]+/gi, "$1[redacted]") } : { name: "UnknownError" });
     return NextResponse.json(
       { success: false, message: "Unable to submit application." },
       { status: 500 },
@@ -89,10 +92,12 @@ export async function GET() {
   }
 
   try {
+    console.info("[APPLICATION] Admin list request received");
     await connectToDatabase();
     const applications = await Application.find().sort({ createdAt: -1 }).lean();
     return NextResponse.json({ success: true, applications: applications.map((application) => ({ ...application, status: application.status || "Pending" })) });
-  } catch {
+  } catch (error) {
+    console.error("[APPLICATION GET ERROR]", error instanceof Error ? { name: error.name, message: error.message.replace(/(mongodb(?:\+srv)?:\/\/)[^\s]+/gi, "$1[redacted]") } : { name: "UnknownError" });
     return NextResponse.json({ success: false, message: "Unable to load applications." }, { status: 500 });
   }
 }
