@@ -1,0 +1,96 @@
+import { NextResponse } from "next/server";
+import connectToDatabase from "@/lib/mongodb";
+import TeamMember from "@/models/TeamMember";
+
+const optionalStringFields = [
+  "department",
+  "registrationNumber",
+  "bio",
+  "image",
+  "instagram",
+  "facebook",
+  "linkedin",
+] as const;
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value) && typeof value === "object" && !Array.isArray(value);
+
+const isNonEmptyString = (value: unknown): value is string =>
+  typeof value === "string" && value.trim().length > 0;
+
+const parseMember = (body: Record<string, unknown>) => {
+  if (!isNonEmptyString(body.name) || !isNonEmptyString(body.role)) {
+    return { error: "Name and role are required." } as const;
+  }
+
+  const member: Record<string, unknown> = {
+    name: body.name.trim(),
+    role: body.role.trim(),
+  };
+
+  for (const field of optionalStringFields) {
+    if (typeof body[field] === "string") {
+      member[field] = body[field].trim();
+    }
+  }
+
+  if (body.semester !== undefined && body.semester !== "") {
+    const semester = Number(body.semester);
+    if (!Number.isInteger(semester) || semester < 1) {
+      return { error: "Semester must be a positive whole number." } as const;
+    }
+    member.semester = semester;
+  }
+
+  if (body.order !== undefined && body.order !== "") {
+    const order = Number(body.order);
+    if (!Number.isInteger(order)) {
+      return { error: "Display order must be a whole number." } as const;
+    }
+    member.order = order;
+  }
+
+  return { member } as const;
+};
+
+export async function GET() {
+  try {
+    await connectToDatabase();
+    const members = await TeamMember.find().sort({ order: 1, createdAt: 1 }).lean();
+    return NextResponse.json({ success: true, members });
+  } catch {
+    return NextResponse.json(
+      { success: false, message: "Unable to load team members." },
+      { status: 500 },
+    );
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const body: unknown = await request.json();
+    if (!isRecord(body)) {
+      return NextResponse.json(
+        { success: false, message: "Invalid request data." },
+        { status: 400 },
+      );
+    }
+
+    const parsed = parseMember(body);
+    if ("error" in parsed) {
+      return NextResponse.json(
+        { success: false, message: parsed.error },
+        { status: 400 },
+      );
+    }
+
+    await connectToDatabase();
+    const member = await TeamMember.create(parsed.member);
+    return NextResponse.json({ success: true, member }, { status: 201 });
+  } catch {
+    return NextResponse.json(
+      { success: false, message: "Unable to create team member." },
+      { status: 500 },
+    );
+  }
+}
