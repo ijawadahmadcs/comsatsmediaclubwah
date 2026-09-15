@@ -64,7 +64,7 @@ export async function GET() {
     const [members, acceptedApplicants] = await Promise.all([
       TeamMember.find().sort({ order: 1, createdAt: 1 }).lean(),
       Application.find({ status: "Accepted" })
-        .select("fullName registrationNumber department areaOfInterest image")
+        .select("fullName registrationNumber department areaOfInterest image teamMemberId")
         .sort({ createdAt: 1 })
         .lean(),
     ]);

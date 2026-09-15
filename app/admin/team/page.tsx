@@ -28,6 +28,7 @@ type AcceptedApplicant = {
   registrationNumber: string;
   department: string;
   areaOfInterest: string;
+  teamMemberId?: string;
 };
 
 type FormValues = Omit<TeamMember, "_id">;
@@ -91,7 +92,8 @@ export default function TeamManagementPage() {
       setMembers(teamResult.members);
       setAcceptedApplicants(
         applicationsResult.applications.filter(
-          (application: AcceptedApplicant & { status?: string }) => application.status === "Accepted",
+          (application: AcceptedApplicant & { status?: string; teamMemberId?: string }) =>
+            application.status === "Accepted" && !application.teamMemberId,
         ),
       );
     } catch (loadError) {
@@ -198,6 +200,25 @@ export default function TeamManagementPage() {
     }
   }
 
+  async function addAcceptedApplicant(applicant: AcceptedApplicant) {
+    setIsSaving(true);
+    setFeedback({ type: "", message: "" });
+    try {
+      const response = await fetch(`/api/team/from-application/${applicant._id}`, {
+        method: "POST",
+        credentials: "include",
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.message || "Unable to add applicant to the team.");
+      setFeedback({ type: "success", message: result.alreadyAdded ? `${applicant.fullName} is already on the team.` : `${applicant.fullName} was added to the team.` });
+      await loadMembers();
+    } catch (addError) {
+      setFeedback({ type: "error", message: addError instanceof Error ? addError.message : "Unable to add applicant to the team." });
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   return (
     <main className="min-h-screen bg-[#08090b] px-3 py-28 text-white sm:px-5">
       <section className="mx-auto max-w-7xl rounded-[2rem] border border-white/10 bg-[#0b0d10] px-6 py-10 sm:px-10 lg:px-16">
@@ -225,6 +246,9 @@ export default function TeamManagementPage() {
                   <p className="font-medium text-white/85">{applicant.fullName}</p>
                   <p className="mt-1 text-xs text-white/45">{applicant.registrationNumber}</p>
                   <p className="mt-1 text-xs text-white/35">{applicant.department} · {applicant.areaOfInterest}</p>
+                  <button type="button" disabled={isSaving || Boolean(applicant.teamMemberId)} onClick={() => void addAcceptedApplicant(applicant)} className="mt-3 w-full rounded-lg border border-blue-200/15 px-3 py-2 text-xs text-blue-100/75 transition hover:bg-blue-200/10 disabled:cursor-not-allowed disabled:opacity-45">
+                    {applicant.teamMemberId ? "Already on team" : "Add to team"}
+                  </button>
                 </div>
               ))}
             </div>

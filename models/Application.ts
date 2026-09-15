@@ -10,6 +10,7 @@ const applicationSchema = new Schema(
     email: { type: String, required: true, lowercase: true, trim: true },
     areaOfInterest: { type: String, required: true, trim: true },
     image: { type: String, trim: true },
+    teamMemberId: { type: Schema.Types.ObjectId, ref: "TeamMember" },
     motivation: { type: String, required: true, trim: true },
     expectations: { type: String, trim: true },
     status: { type: String, enum: ["Pending", "Reviewed", "Accepted", "Rejected"], default: "Pending" },

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import connectToDatabase from "@/lib/mongodb";
 import Application from "@/models/Application";
+import TeamMember from "@/models/TeamMember";
 import { requireApiAdmin } from "@/lib/auth";
 
 const requiredFields = [
@@ -96,7 +97,21 @@ export async function GET() {
     console.info("[APPLICATION] Admin list request received");
     await connectToDatabase();
     const applications = await Application.find().sort({ createdAt: -1 }).lean();
-    return NextResponse.json({ success: true, applications: applications.map((application) => ({ ...application, status: application.status || "Pending" })) });
+    const registrationNumbers = applications
+      .filter((application) => application.status === "Accepted")
+      .map((application) => application.registrationNumber);
+    const teamMembers = await TeamMember.find({ registrationNumber: { $in: registrationNumbers } })
+      .select("_id registrationNumber")
+      .lean();
+    const teamMemberByRegistration = new Map(teamMembers.map((member) => [member.registrationNumber, member._id]));
+    return NextResponse.json({
+      success: true,
+      applications: applications.map((application) => ({
+        ...application,
+        status: application.status || "Pending",
+        teamMemberId: application.teamMemberId || teamMemberByRegistration.get(application.registrationNumber),
+      })),
+    });
   } catch (error) {
     console.error("[APPLICATION GET ERROR]", error instanceof Error ? { name: error.name, message: error.message.replace(/(mongodb(?:\+srv)?:\/\/)[^\s]+/gi, "$1[redacted]") } : { name: "UnknownError" });
     return NextResponse.json({ success: false, message: "Unable to load applications." }, { status: 500 });

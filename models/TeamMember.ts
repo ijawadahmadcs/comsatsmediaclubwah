@@ -6,6 +6,7 @@ const teamMemberSchema = new Schema(
     role: { type: String, required: true, trim: true },
     department: { type: String, trim: true },
     registrationNumber: { type: String, trim: true },
+    applicationId: { type: Schema.Types.ObjectId, ref: "Application", unique: true, sparse: true },
     contactNumber: { type: String, trim: true },
     semester: { type: Number },
     areaOfInterest: { type: String, trim: true },
