@@ -151,7 +151,7 @@ export default function TeamPage() {
           <section className="mt-4 sm:mt-5">
             <div className="rounded-[2rem] border border-white/10 bg-[#0b0d10] px-6 py-14 sm:px-10 lg:px-16 lg:py-20">
               <p className="text-xs uppercase tracking-[0.3em] text-white/35">
-                01 — Core Members
+                Core Members
               </p>
               <div className="mt-5 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
                 <h2 className="text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl">
@@ -202,7 +202,7 @@ export default function TeamPage() {
           <section className="mt-4 sm:mt-5">
             <div className="rounded-[2rem] border border-white/10 bg-[#0b0d10] px-6 py-14 sm:px-10 lg:px-16 lg:py-20">
               <p className="text-xs uppercase tracking-[0.3em] text-white/35">
-                02 — General Members
+                Members
               </p>
               <div className="mt-5 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
                 <h2 className="text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl">
@@ -248,7 +248,7 @@ export default function TeamPage() {
           <section className="mt-4 sm:mt-5">
             <div className="rounded-[2rem] border border-white/10 bg-[#0b0d10] px-6 py-16 sm:px-10 lg:px-16 lg:py-20">
               <p className="text-xs uppercase tracking-[0.3em] text-white/35">
-                03 — One Team
+                03 - One Team
               </p>
               <h2 className="mt-6 max-w-5xl text-4xl font-semibold leading-[0.95] tracking-tight sm:text-6xl lg:text-7xl">
                 Different skills.

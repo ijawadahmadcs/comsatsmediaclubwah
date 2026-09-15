@@ -118,7 +118,7 @@ export default function AboutPage() {
               className="mt-7 max-w-2xl text-base leading-relaxed text-white/65 sm:text-lg"
             >
               We don't just represent a society.
-              We represent COMSATS as a whole — its people,
+              We represent COMSATS as a whole - its people,
               its achievements, its creativity, and its stories.
             </motion.p>
 
@@ -276,7 +276,7 @@ export default function AboutPage() {
             <div>
 
               <p className="text-xs uppercase tracking-[0.3em] text-white/40">
-                03 — Our Purpose
+                03 - Our Purpose
               </p>
 
               <h2 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">

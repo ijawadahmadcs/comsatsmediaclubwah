@@ -95,7 +95,7 @@ export default function WorkPage() {
             </p>
 
             <p className="text-xs uppercase tracking-[0.2em] text-white/25">
-              2026 — Present
+              2026 - Present
             </p>
           </motion.div>
         </div>

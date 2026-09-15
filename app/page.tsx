@@ -202,7 +202,7 @@ export default function Home() {
               transition={{ duration: 0.6, delay: 0.15 }}
               className="mt-10 max-w-2xl border-l border-blue-400/50 pl-6 text-base leading-8 text-white/60 sm:text-lg"
             >
-              I believe media is not just about capturing moments—it is about
+              I believe media is not just about capturing moments-it is about
               telling stories, expressing ideas, and creating an identity for
               our community. As a club, our goal is to provide students with a
               platform where creativity meets opportunity. From photography and
