@@ -245,7 +245,7 @@ export default function TeamPage() {
             </div>
           </section>
 
-          <section className="mt-4 sm:mt-5">
+          {/* <section className="mt-4 sm:mt-5">
             <div className="rounded-[2rem] border border-white/10 bg-[#0b0d10] px-6 py-16 sm:px-10 lg:px-16 lg:py-20">
               <p className="text-xs uppercase tracking-[0.3em] text-white/35">
                 03 - One Team
@@ -273,10 +273,10 @@ export default function TeamPage() {
                 </Link>
               </div>
             </div>
-          </section>
+          </section> */}
           <div className="h-4 sm:h-5" />
         </>
-      )}
+      )}x
     </main>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 const navLinks = [
@@ -147,6 +148,9 @@ export default function Footer() {
               <br className="sm:hidden" />
               All rights reserved.
             </p>
+            <a href="https://ijawadahmad.vercel.app" target="_blank" rel="noopener noreferrer" className="leading-5">
+              Developed by: Jawad Ahmad <ArrowRight className="ml-1 inline h-3 w-3" />
+            </a>
 
             <p className="text-[10px] uppercase tracking-[0.2em] text-white/25 sm:text-right">
               Capture • Create • Communicate
