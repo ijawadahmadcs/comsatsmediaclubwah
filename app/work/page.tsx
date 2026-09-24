@@ -1,233 +1,110 @@
 "use client";
 
-import Link from "next/link";
-import { motion } from "framer-motion";
-import { ArrowRight, ArrowUpRight } from "lucide-react";
+import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { ChevronLeft, ChevronRight, Maximize2, X } from "lucide-react";
 
-const projects = [
-  {
-    title: "Campus Life",
-    category: "Photography",
-    year: "2026",
-    image: "/work/work-2.jpeg",
-    size: "large",
-  },
-  {
-    title: "University Events",
-    category: "Event Coverage",
-    year: "2026",
-    image: "/work/work-3.jpeg",
-    size: "small",
-  },
-  // {
-  //   title: "Creative Stories",
-  //   category: "Videography",
-  //   year: "2026",
-  //   image: "/work/creative-stories.jpg",
-  //   size: "small",
-  // },
-  // {
-  //   title: "Visual Identity",
-  //   category: "Creative Design",
-  //   year: "2026",
-  //   image: "/work/visual-identity.jpg",
-  //   size: "medium",
-  // },
-  // {
-  //   title: "Moments at COMSATS",
-  //   category: "Photography",
-  //   year: "2026",
-  //   image: "/work/moments.jpg",
-  //   size: "medium",
-  // },
-  // {
-  //   title: "Behind the Scenes",
-  //   category: "Digital Storytelling",
-  //   year: "2026",
-  //   image: "/work/behind-scenes.jpg",
-  //   size: "large",
-  // },
+const localGallery = [
+  "/work/work-2.jpeg",
+  "/work/work-3.jpeg",
+  "/work/work-5.jpg",
+  "/work/work-6.jpg",
+  "/work/work-7.jpg",
+  "/work/work-8.jpg",
+  "/work/work-9.jpg",
+  "/work/work-10.jpg",
+  "/work/work-11.jpg",
+  "/work/work-12.jpg",
+  "/work/work-13.jpg",
 ];
 
-const categories = [
-  "All",
-  "Photography",
-  "Videography",
-  "Creative Design",
-  "Event Coverage",
-];
+type WorkAsset = {
+  _id?: string;
+  url: string;
+  resourceType: "image" | "video";
+};
 
 export default function WorkPage() {
+  const [uploadedAssets, setUploadedAssets] = useState<WorkAsset[]>([]);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const gallery: WorkAsset[] = [
+    ...localGallery.map((url) => ({ url, resourceType: "image" as const } satisfies WorkAsset)),
+    ...uploadedAssets,
+  ];
+
+  useEffect(() => {
+    fetch("/api/work")
+      .then(async (response) => {
+        const result = await response.json();
+        if (response.ok && result.success) setUploadedAssets(result.assets);
+      })
+      .catch(() => undefined);
+  }, []);
+
+  function closeLightbox() {
+    setSelectedIndex(null);
+  }
+
+  function showPrevious() {
+    setSelectedIndex((current) => current === null ? null : (current - 1 + gallery.length) % gallery.length);
+  }
+
+  function showNext() {
+    setSelectedIndex((current) => current === null ? null : (current + 1) % gallery.length);
+  }
+
+  useEffect(() => {
+    if (selectedIndex === null) return;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") closeLightbox();
+      if (event.key === "ArrowLeft") showPrevious();
+      if (event.key === "ArrowRight") showNext();
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "";
+    };
+  }, [selectedIndex]);
+
   return (
     <main className="min-h-screen bg-[#08090b] px-3 py-3 text-white sm:px-5 sm:py-5">
-      {/* HEADER */}
-      <section className="rounded-[2rem] border border-white/10 bg-[#0b0d10] px-6 pb-16 pt-32 sm:px-10 lg:px-16 lg:pb-24 lg:pt-40">
+      <section className="overflow-hidden rounded-[2rem] border border-white/10 bg-[#0b0d10] px-4 pb-5 pt-28 sm:px-6 sm:pt-32 lg:px-8 lg:pt-36">
         <div className="mx-auto max-w-7xl">
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-xs uppercase tracking-[0.3em] text-white/40"
-          >
-            COMSATS Media Club · Our Work
-          </motion.p>
-
-          <motion.h1
-            initial={{ opacity: 0, y: 35 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.1 }}
-            className="mt-6 max-w-6xl text-5xl font-semibold leading-[0.9] tracking-tight sm:text-7xl lg:text-8xl"
-          >
-            Stories we've
-            <br />
-            <span className="text-white/30">captured.</span>
-          </motion.h1>
-
-          <motion.div
-            initial={{ opacity: 0, y: 25 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.25 }}
-            className="mt-10 flex flex-col justify-between gap-8 lg:flex-row lg:items-end"
-          >
-            <p className="max-w-xl text-base leading-8 text-white/45 sm:text-lg">
-              A collection of moments, events, people, and ideas captured by
-              the creative minds of COMSATS Media Club.
-            </p>
-
-            <p className="text-xs uppercase tracking-[0.2em] text-white/25">
-              2026 - Present
-            </p>
+          <motion.div initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="mb-8 flex items-end justify-between gap-4 px-2 sm:mb-10 sm:px-4">
+            <div>
+                <p className="text-sm text-white/50"> Explore our collection of artistic works</p>
+              <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-6xl lg:text-7xl">Art Gallery</h1>
+            </div>
+            {/* <p className="pb-1 text-xs uppercase tracking-[0.2em] text-white/25">{gallery.length} frames</p> */}
           </motion.div>
-        </div>
-      </section>
 
-      {/* FILTERS */}
-      {/* <section className="mt-4 sm:mt-5">
-        <div className="rounded-[2rem] border border-white/10 bg-[#0b0d10] px-6 py-7 sm:px-10 lg:px-16">
-          <div className="flex flex-wrap gap-2">
-            {categories.map((category, index) => (
-              <button
-                key={category}
-                className={`rounded-full border px-5 py-2.5 text-sm transition ${
-                  index === 0
-                    ? "border-white bg-white text-black"
-                    : "border-white/10 bg-white/[0.03] text-white/50 hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
-                }`}
-              >
-                {category}
-              </button>
-            ))}
-          </div>
-        </div>
-      </section> */}
-
-      {/* WORK GRID */}
-      <section className="mt-4 sm:mt-5">
-        <div className="rounded-[2rem] border border-white/10 bg-[#0b0d10] p-3 sm:p-5 lg:p-6">
-          <div className="grid gap-3 lg:grid-cols-2">
-            {projects.map((project, index) => (
-              <motion.article
-                key={project.title}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.15 }}
-                transition={{
-                  duration: 0.6,
-                  delay: (index % 2) * 0.08,
-                }}
-                className={`group relative overflow-hidden rounded-[1.5rem] border border-white/10 ${
-                  project.size === "large"
-                    ? "min-h-[520px]"
-                    : project.size === "medium"
-                      ? "min-h-[430px]"
-                      : "min-h-[350px]"
-                }`}
-              >
-                {/* IMAGE */}
-                <div
-                  className="absolute inset-0 bg-cover bg-center transition duration-700 group-hover:scale-105"
-                  style={{
-                    backgroundImage: `url('${project.image}')`,
-                  }}
-                />
-
-                {/* OVERLAYS */}
-                <div className="absolute inset-0 bg-black/15 transition duration-500 group-hover:bg-black/30" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-
-                {/* CONTENT */}
-                <div className="relative z-10 flex h-full min-h-inherit flex-col justify-between p-6 sm:p-8">
-                  <div className="flex items-start justify-between">
-                    <span className="rounded-full border border-white/15 bg-black/20 px-4 py-2 text-[10px] uppercase tracking-[0.2em] text-white/60 backdrop-blur-md">
-                      {project.category}
-                    </span>
-
-                    <span className="text-xs text-white/35">
-                      {String(index + 1).padStart(2, "0")}
-                    </span>
-                  </div>
-
-                  <div>
-                    <div className="flex items-end justify-between gap-5">
-                      <div>
-                        <p className="mb-2 text-xs text-white/35">
-                          {project.year}
-                        </p>
-
-                        <h2 className="max-w-lg text-3xl font-medium tracking-tight sm:text-4xl">
-                          {project.title}
-                        </h2>
-                      </div>
-
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 backdrop-blur-md transition duration-300 group-hover:bg-white group-hover:text-black">
-                        <ArrowUpRight size={18} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </motion.article>
+          <div className="columns-1 gap-3 sm:columns-2 lg:columns-3">
+            {gallery.map((asset, index) => (
+              <motion.button key={asset._id || asset.url} type="button" initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.12 }} transition={{ duration: 0.55, delay: (index % 3) * 0.06 }} onClick={() => setSelectedIndex(index)} className="group relative mb-3 block w-full break-inside-avoid overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] text-left focus:outline-none focus:ring-2 focus:ring-white/60" aria-label={`Open work ${index + 1}`}>
+                {asset.resourceType === "video" ? <video src={asset.url} muted playsInline loop autoPlay className="block h-auto max-h-[70vh] w-full object-cover transition duration-700 ease-out group-hover:scale-[1.04]" /> : <img src={asset.url} alt="COMSATS Media Club work" className="block h-auto w-full transition duration-700 ease-out group-hover:scale-[1.04]" />}
+                <span className="pointer-events-none absolute inset-0 bg-black/0 transition duration-500 group-hover:bg-black/25" />
+                <span className="absolute bottom-4 right-4 flex h-10 w-10 translate-y-2 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white/75 opacity-0 backdrop-blur-md transition duration-300 group-hover:translate-y-0 group-hover:opacity-100"><Maximize2 size={16} /></span>
+              </motion.button>
             ))}
           </div>
         </div>
       </section>
 
-      {/* STATEMENT */}
-      <section className="mt-4 sm:mt-5">
-        <div className="rounded-[2rem] border border-white/10 bg-[#0b0d10] px-6 py-20 sm:px-10 lg:px-16 lg:py-28">
-          <p className="text-xs uppercase tracking-[0.3em] text-white/35">
-            Our Approach
-          </p>
-
-          <h2 className="mt-6 max-w-5xl text-4xl font-semibold leading-[0.95] tracking-tight sm:text-6xl lg:text-7xl">
-            We don't simply
-            <br />
-            <span className="text-white/30">document moments.</span>
-            <br />
-            We give them meaning.
-          </h2>
-
-          <div className="mt-10 flex flex-col justify-between gap-8 lg:flex-row lg:items-end">
-            <p className="max-w-2xl text-base leading-8 text-white/40 sm:text-lg">
-              From the energy of university events to the quiet moments
-              between them, our work is about creating a visual memory of
-              campus life.
-            </p>
-
-            {/* <Link
-              href="/join"
-              className="group inline-flex w-fit items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition hover:bg-white/90"
-            >
-              Create With Us
-              <ArrowRight
-                size={16}
-                className="transition-transform group-hover:translate-x-1"
-              />
-            </Link> */}
-          </div>
-        </div>
-      </section>
-
-      <div className="h-4 sm:h-5" />
+      <AnimatePresence>
+        {selectedIndex !== null && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 p-4 backdrop-blur-md sm:p-8" role="dialog" aria-modal="true" onClick={closeLightbox}>
+            <button type="button" onClick={closeLightbox} className="absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white hover:text-black" aria-label="Close image viewer"><X size={20} /></button>
+            <button type="button" onClick={(event) => { event.stopPropagation(); showPrevious(); }} className="absolute left-3 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white transition hover:bg-white hover:text-black sm:left-8" aria-label="Previous image"><ChevronLeft size={22} /></button>
+            {gallery[selectedIndex].resourceType === "video" ? <motion.video key={gallery[selectedIndex].url} initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.25 }} src={gallery[selectedIndex].url} controls autoPlay className="max-h-[88vh] max-w-[calc(100vw-5rem)] rounded-xl object-contain shadow-2xl sm:max-w-[calc(100vw-12rem)]" onClick={(event) => event.stopPropagation()} /> : <motion.img key={gallery[selectedIndex].url} initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.25 }} src={gallery[selectedIndex].url} alt="Expanded COMSATS Media Club work" className="max-h-[88vh] max-w-[calc(100vw-5rem)] rounded-xl object-contain shadow-2xl sm:max-w-[calc(100vw-12rem)]" onClick={(event) => event.stopPropagation()} />}
+            <button type="button" onClick={(event) => { event.stopPropagation(); showNext(); }} className="absolute right-3 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white transition hover:bg-white hover:text-black sm:right-8" aria-label="Next image"><ChevronRight size={22} /></button>
+            <p className="absolute bottom-5 left-1/2 -translate-x-1/2 text-xs tracking-[0.2em] text-white/45">{String(selectedIndex + 1).padStart(2, "0")} / {String(gallery.length).padStart(2, "0")}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 
@@ -31,7 +32,7 @@ export default function Navbar() {
             {/* Logo */}
             <Link href="/" className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-sm font-bold text-white">
-                CM
+                <Image src="/logo.jpg" alt="COMSATS Media Club" width={35} height={35} className="rounded-xl"/>
               </div>
 
               <div className="hidden leading-tight sm:block">

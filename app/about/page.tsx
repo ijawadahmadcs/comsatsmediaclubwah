@@ -30,7 +30,7 @@ const focusAreas = [
   {
     icon: Palette,
     number: "03",
-    title: "Creative Design",
+    title: "Graphic Design",
     description:
       "Creating graphics and visual content that communicate ideas with impact.",
   },
@@ -41,6 +41,34 @@ const focusAreas = [
     description:
       "Connecting students, ideas, and the university community through media.",
   },
+  {
+    icon: ArrowRight,
+    number: "05",
+    title: "Content Creation",
+    description:
+      "Developing engaging content for social media, publications, and campaigns.",
+  },
+  {
+    icon: ArrowDown,
+    number: "06",
+    title: "Digital Storytelling",
+    description:
+      "Using multimedia platforms to tell stories that resonate with the university community.",
+  },
+  {
+    icon: Check,
+    number: "07",
+    title: "UI/UX Design",
+    description:
+      "Creating user interfaces and experiences that are both functional and aesthetically pleasing.",
+  },
+  {
+    icon: Palette,
+    number: "08",
+    title: "Branding",
+    description:
+      "Developing and maintaining a consistent visual identity for the club and its initiatives.",
+  }
 ];
 
 const objectives = [
@@ -71,7 +99,7 @@ export default function AboutPage() {
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: "url('/about-hero.jpg')",
+            backgroundImage: "url('/about-hero.jpeg')",
           }}
         />
 
@@ -263,9 +291,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* =====================================================
-          OUR PURPOSE
-      ===================================================== */}
 
       <section className="mt-4 sm:mt-5">
 
@@ -329,6 +354,50 @@ export default function AboutPage() {
 
         </div>
 
+      </section>
+
+
+      
+      <section className="mt-4 sm:mt-5 p-5">
+        <div className="rounded-[2rem] border border-white/10 bg-[#0b0d10] px-6 py-16 sm:px-10 lg:px-16 lg:py-24">
+          <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr]">
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-white/40">
+                Our Perspective
+              </p>
+
+              <h2 className="mt-5 text-4xl font-semibold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
+                Every moment
+                <br />
+                <span className="text-white/35">has a story.</span>
+              </h2>
+            </div>
+
+            <div className="max-w-2xl lg:pt-8">
+              <p className="text-xl leading-relaxed text-white/75 sm:text-2xl">
+                We believe every event, achievement, and moment on campus
+                deserves to be seen and remembered.
+              </p>
+
+              <p className="mt-6 text-base leading-8 text-white/40">
+                The COMSATS Media Club brings together creative minds to
+                capture, create, and communicate the stories that shape our
+                university.
+              </p>
+
+              <Link
+                href="/about"
+                className="group mt-8 inline-flex items-center gap-2 text-sm text-white/70 transition hover:text-white"
+              >
+                Discover the Club
+                <ArrowRight
+                  size={15}
+                  className="transition-transform group-hover:translate-x-1"
+                />
+              </Link>
+            </div>
+          </div>
+        </div>
       </section>
 
        {/* WHY JOIN */}

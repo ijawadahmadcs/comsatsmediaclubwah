@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 
 const navLinks = [
@@ -57,7 +58,7 @@ export default function Footer() {
               {/* Logo */}
               <div className="flex items-center gap-3">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-sm font-black text-black">
-                  CM
+                <Image src="/logo.jpg" alt="COMSATS Media Club" width={35} height={35} className="rounded-xl"/>
                 </div>
 
                 <div className="leading-none">

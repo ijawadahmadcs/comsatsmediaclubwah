@@ -1,6 +1,7 @@
 "use client";
 import Hero from "@/components/Hero";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
@@ -9,64 +10,46 @@ import {
   Palette,
   PenTool,
 } from "lucide-react";
-import { section } from "framer-motion/m";
 
-const creativeAreas = [
-  {
-    number: "01",
-    title: "Photography",
-    description: "Capturing moments that deserve to be remembered.",
-    icon: Camera,
-  },
-  {
-    number: "02",
-    title: "Videography",
-    description: "Turning experiences into visual stories.",
-    icon: Clapperboard,
-  },
-  {
-    number: "03",
-    title: "Creative Design",
-    description: "Giving ideas a visual identity.",
-    icon: Palette,
-  },
-  {
-    number: "04",
-    title: "Digital Storytelling",
-    description: "Communicating ideas through meaningful content.",
-    icon: PenTool,
-  },
+type CoreMember = {
+  _id: string;
+  name: string;
+  role: string;
+  contactNumber?: string;
+  image?: string;
+};
+
+const coreRoles = [
+  "president",
+  "vice president",
+  "general secretary",
+  "treasurer",
+  "media/communications secretary",
 ];
 
-const team = [
-  {
-    role: "President",
-    name: "Syed Imad Iltaf",
-    image: "/team/president.jpg",
-  },
-  {
-    role: "Vice President",
-    name: "Your Name",
-    image: "/team/vice-president.jpg",
-  },
-  {
-    role: "General Secretary",
-    name: "Your Name",
-    image: "/team/general-secretary.jpg",
-  },
-  {
-    role: "Treasurer",
-    name: "Your Name",
-    image: "/team/treasurer.jpg",
-  },
-  {
-    role: "Media / Communications Secretary",
-    name: "Your Name",
-    image: "/team/media-secretary.jpg",
-  },
-];
+function normalizeRole(role: string) {
+  return role.trim().toLowerCase().replace(/\s*\/\s*/g, "/");
+}
 
 export default function Home() {
+  const [coreMembers, setCoreMembers] = useState<CoreMember[]>([]);
+
+  useEffect(() => {
+    fetch("/api/team")
+      .then(async (response) => {
+        const result = await response.json();
+        if (response.ok && result.success) {
+          setCoreMembers(
+            result.members
+              .filter((member: CoreMember) => coreRoles.includes(normalizeRole(member.role)))
+              .filter((member: CoreMember) => normalizeRole(member.role) !== "president")
+              .sort((a: CoreMember, b: CoreMember) => coreRoles.indexOf(normalizeRole(a.role)) - coreRoles.indexOf(normalizeRole(b.role))),
+          );
+        }
+      })
+      .catch(() => undefined);
+  }, []);
+
   return (
     <>
       <Hero />
@@ -242,47 +225,39 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="mt-4 sm:mt-5 p-5">
-        <div className="rounded-[2rem] border border-white/10 bg-[#0b0d10] px-6 py-16 sm:px-10 lg:px-16 lg:py-24">
-          <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr]">
-            <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-white/40">
-                Our Perspective
-              </p>
-
-              <h2 className="mt-5 text-4xl font-semibold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-                Every moment
-                <br />
-                <span className="text-white/35">has a story.</span>
-              </h2>
-            </div>
-
-            <div className="max-w-2xl lg:pt-8">
-              <p className="text-xl leading-relaxed text-white/75 sm:text-2xl">
-                We believe every event, achievement, and moment on campus
-                deserves to be seen and remembered.
-              </p>
-
-              <p className="mt-6 text-base leading-8 text-white/40">
-                The COMSATS Media Club brings together creative minds to
-                capture, create, and communicate the stories that shape our
-                university.
-              </p>
-
-              <Link
-                href="/about"
-                className="group mt-8 inline-flex items-center gap-2 text-sm text-white/70 transition hover:text-white"
-              >
-                Discover the Club
-                <ArrowRight
-                  size={15}
-                  className="transition-transform group-hover:translate-x-1"
-                />
-              </Link>
-            </div>
+      {/* Core Team Preview */}
+      <section className="m-6 rounded-[2rem] border border-white/10 bg-[#0b0d10] px-6 py-12 sm:px-10 lg:px-16 lg:py-16">
+        <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
+          <div>
+            <p className="text-xs uppercase tracking-[0.3em] text-white/35">The Core Team</p>
+            <h2 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">The people beside the vision.</h2>
           </div>
+          <Link href="/team" className="group inline-flex w-fit items-center gap-2 rounded-full border border-white/15 px-5 py-3 text-sm text-white/70 transition hover:border-white/40 hover:bg-white/10 hover:text-white">
+            Meet the team
+            <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
+          </Link>
+        </div>
+
+        <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {coreMembers.length === 0 ? (
+            <p className="text-sm text-white/35">Loading the core team...</p>
+          ) : (
+            coreMembers.map((member) => (
+              <div key={member._id} className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-white/[0.07]">
+                  {member.image ? <img src={member.image} alt={member.name} className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center text-lg font-semibold text-white/35">{member.name.charAt(0)}</div>}
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-white/85">{member.name}</p>
+                  <p className="mt-1 truncate text-[10px] uppercase tracking-[0.14em] text-blue-200/60">{member.role}</p>
+                  <p className="mt-2 truncate text-xs text-white/35">{member.contactNumber || "Media Club core team"}</p>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </section>
+
 
       <section className="mt-4 sm:mt-5 p-5">
         <div className="rounded-[2rem] border border-white/10 bg-[#0b0d10] px-6 py-16 sm:px-10 lg:px-16 lg:py-24">
@@ -299,11 +274,8 @@ export default function Home() {
               </h2>
             </div>
 
-            <Link
-              href="/work"
-              className="group hidden items-center gap-2 text-sm text-white/60 transition hover:text-white sm:flex"
-            >
-              View All
+            <Link href="/work" className="group hidden items-center gap-2 rounded-full border border-white/15 px-5 py-3 text-sm text-white/70 transition hover:border-white/40 hover:bg-white/10 hover:text-white sm:inline-flex">
+              View all work
               <ArrowRight
                 size={15}
                 className="transition-transform group-hover:translate-x-1"
@@ -315,7 +287,7 @@ export default function Home() {
             <div
               className="min-h-[420px] rounded-[1.5rem] border border-white/10 bg-cover bg-center"
               style={{
-                backgroundImage: "url('/work/work-1.jpeg')",
+                backgroundImage: "url('/work/work-5.jpg')",
               }}
             />
 
@@ -323,24 +295,21 @@ export default function Home() {
               <div
                 className="min-h-[205px] rounded-[1.5rem] border border-white/10 bg-cover bg-center"
                 style={{
-                  backgroundImage: "url('/work/work-2.jpeg')",
+                  backgroundImage: "url('/work/work-3.jpeg')",
                 }}
               />
 
               <div
                 className="min-h-[205px] rounded-[1.5rem] border border-white/10 bg-cover bg-center"
                 style={{
-                  backgroundImage: "url('/work/work-3.jpeg')",
+                  backgroundImage: "url('/work/work-8.jpg')",
                 }}
               />
             </div>
           </div>
 
-          <Link
-            href="/work"
-            className="group mt-6 inline-flex items-center gap-2 text-sm text-white/60 transition hover:text-white sm:hidden"
-          >
-            View All Work
+          <Link href="/work" className="group mt-6 inline-flex items-center gap-2 rounded-full border border-white/15 px-5 py-3 text-sm text-white/70 transition hover:border-white/40 hover:bg-white/10 hover:text-white sm:hidden">
+            View all work
             <ArrowRight
               size={15}
               className="transition-transform group-hover:translate-x-1"
