@@ -10,11 +10,15 @@ function buildFilter(searchParams: URLSearchParams) {
   const department = searchParams.get("department");
   const semester = searchParams.get("semester");
   const areaOfInterest = searchParams.get("areaOfInterest");
+  const paymentStatus = searchParams.get("paymentStatus");
   const search = searchParams.get("search");
   if (status && status !== "All") filter.status = status;
   if (department && department !== "All") filter.department = department;
   if (semester && semester !== "All") filter.semester = semester;
   if (areaOfInterest && areaOfInterest !== "All") filter.areaOfInterest = areaOfInterest;
+  if (paymentStatus && paymentStatus !== "All") {
+    filter.paymentStatus = paymentStatus === "Unpaid" ? { $in: ["Unpaid", null] } : "Paid";
+  }
   if (search) filter.$or = ["fullName", "registrationNumber", "email", "department", "areaOfInterest"].map((field) => ({ [field]: { $regex: search, $options: "i" } }));
   return filter;
 }

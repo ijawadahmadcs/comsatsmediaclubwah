@@ -30,6 +30,7 @@ export default function ApplicationsPage() {
   const [department, setDepartment] = useState("All");
   const [semester, setSemester] = useState("All");
   const [interest, setInterest] = useState("All");
+  const [paymentStatus, setPaymentStatus] = useState("All");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -53,7 +54,7 @@ export default function ApplicationsPage() {
 
   const filtered = applications.filter((item) => {
     const haystack = [item.fullName, item.registrationNumber, item.email, item.department, item.areaOfInterest].join(" ").toLowerCase();
-    return (!search || haystack.includes(search.toLowerCase())) && (status === "All" || (item.status || "Pending") === status) && (department === "All" || item.department === department) && (semester === "All" || item.semester === semester) && (interest === "All" || item.areaOfInterest === interest);
+    return (!search || haystack.includes(search.toLowerCase())) && (status === "All" || (item.status || "Pending") === status) && (department === "All" || item.department === department) && (semester === "All" || item.semester === semester) && (interest === "All" || item.areaOfInterest === interest) && (paymentStatus === "All" || (item.paymentStatus || "Unpaid") === paymentStatus);
   });
 
   async function updateApplication(changes: { status?: string; paymentStatus?: string }) {
@@ -92,7 +93,7 @@ export default function ApplicationsPage() {
   }
 
   function exportApplications(format: string) {
-    const params = new URLSearchParams({ format, search, status, department, semester, areaOfInterest: interest });
+    const params = new URLSearchParams({ format, search, status, department, semester, areaOfInterest: interest, paymentStatus });
     window.location.href = `/api/applications/export?${params}`;
   }
 
@@ -109,7 +110,8 @@ export default function ApplicationsPage() {
           <select aria-label="Department" value={department} onChange={(event) => setDepartment(event.target.value)} className="rounded-xl border border-white/10 bg-[#0b0d10] px-3 py-3 text-sm text-white/70">{options.departments.map((option) => <option key={option}>{option}</option>)}</select>
           <select aria-label="Semester" value={semester} onChange={(event) => setSemester(event.target.value)} className="rounded-xl border border-white/10 bg-[#0b0d10] px-3 py-3 text-sm text-white/70">{options.semesters.map((option) => <option key={option}>{option}</option>)}</select>
           <select aria-label="Interest" value={interest} onChange={(event) => setInterest(event.target.value)} className="rounded-xl border border-white/10 bg-[#0b0d10] px-3 py-3 text-sm text-white/70">{options.interests.map((option) => <option key={option}>{option}</option>)}</select>
-          <button onClick={() => { setSearch(""); setStatus("All"); setDepartment("All"); setSemester("All"); setInterest("All"); }} className="rounded-xl border border-white/10 px-4 py-3 text-sm text-white/60">Clear Filters</button>
+          <select aria-label="Registration fee" value={paymentStatus} onChange={(event) => setPaymentStatus(event.target.value)} className="rounded-xl border border-white/10 bg-[#0b0d10] px-3 py-3 text-sm text-white/70"><option>All</option>{paymentStatuses.map((option) => <option key={option}>{option}</option>)}</select>
+          <button onClick={() => { setSearch(""); setStatus("All"); setDepartment("All"); setSemester("All"); setInterest("All"); setPaymentStatus("All"); }} className="rounded-xl border border-white/10 px-4 py-3 text-sm text-white/60">Clear Filters</button>
           <button onClick={() => exportApplications("csv")} className="rounded-xl bg-white px-4 py-3 text-sm font-medium text-black">Export CSV</button>
           <button onClick={() => exportApplications("xlsx")} className="rounded-xl border border-white/15 px-4 py-3 text-sm text-white/75">Export Excel</button>
         </div>
