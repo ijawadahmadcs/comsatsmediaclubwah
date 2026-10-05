@@ -51,28 +51,28 @@ export default function AdminDashboardPage() {
       ]
     : [];
   return (
-    <main className="min-h-screen bg-[#08090b] px-5 py-16 text-white sm:px-10 lg:px-16">
+    <main className="min-h-screen bg-[#08090b] px-4 py-12 text-white sm:px-8 lg:px-12">
       <div className="mx-auto max-w-7xl">
         <p className="text-xs uppercase tracking-[0.3em] text-blue-300/60">
           Overview
         </p>
-        <h1 className="mt-4 text-4xl font-semibold tracking-tight">
+        <h1 className="mt-20 text-3xl font-semibold tracking-tight">
           Dashboard
         </h1>
         <p className="mt-3 text-sm text-white/40">
           A quiet view of the club behind the scenes.
         </p>
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {cards.length ? (
             cards.map(([label, value]) => (
               <div
                 key={label}
-                className="rounded-2xl border border-white/10 bg-[#0b0d10] p-6"
+                className="rounded-2xl border border-white/10 bg-[#0b0d10] p-5"
               >
                 <p className="text-xs uppercase tracking-[0.15em] text-white/35">
                   {label}
                 </p>
-                <p className="mt-5 text-4xl font-semibold">{value}</p>
+                <p className="mt-4 text-3xl font-semibold">{value}</p>
               </div>
             ))
           ) : (
@@ -81,10 +81,10 @@ export default function AdminDashboardPage() {
             </div>
           )}
         </div>
-        <div className="mt-8 grid gap-8 xl:grid-cols-[1fr_0.7fr]">
-          <section className="rounded-2xl border border-white/10 bg-[#0b0d10] p-6">
+        <div className="mt-7 grid gap-6 xl:grid-cols-[1fr_0.7fr]">
+          <section className="rounded-2xl border border-white/10 bg-[#0b0d10] p-5">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-medium">Recent Applications</h2>
+              <h2 className="text-lg font-medium">Recent Applications</h2>
               <Link
                 href="/admin/applications"
                 className="text-sm text-blue-200"
@@ -120,8 +120,8 @@ export default function AdminDashboardPage() {
               )}
             </div>
           </section>
-          <section className="rounded-2xl border border-white/10 bg-[#0b0d10] p-6">
-            <h2 className="text-xl font-medium">Quick Actions</h2>
+          <section className="rounded-2xl border border-white/10 bg-[#0b0d10] p-5">
+            <h2 className="text-lg font-medium">Quick Actions</h2>
             <div className="mt-6 grid gap-3">
               <Link
                 href="/admin/team"
