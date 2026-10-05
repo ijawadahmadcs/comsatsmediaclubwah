@@ -14,6 +14,7 @@ const applicationSchema = new Schema(
     motivation: { type: String, required: true, trim: true },
     expectations: { type: String, trim: true },
     status: { type: String, enum: ["Pending", "Reviewed", "Accepted", "Rejected"], default: "Pending" },
+    paymentStatus: { type: String, enum: ["Unpaid", "Paid"], default: "Unpaid" },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
   },

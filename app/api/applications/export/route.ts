@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     await connectToDatabase();
     const url = new URL(request.url);
     const applications = await Application.find(buildFilter(url.searchParams)).sort({ createdAt: -1 }).lean();
-    const rows = applications.map((application) => ({ "Full Name": application.fullName, "Registration Number": application.registrationNumber, Department: application.department, Semester: application.semester, "Contact Number": application.contactNumber, Email: application.email, "Area of Interest": application.areaOfInterest, "Why Join": application.motivation, Expectations: application.expectations || "", Status: application.status || "Pending", "Submitted At": application.createdAt }));
+    const rows = applications.map((application) => ({ "Full Name": application.fullName, "Registration Number": application.registrationNumber, Department: application.department, Semester: application.semester, "Contact Number": application.contactNumber, Email: application.email, "Area of Interest": application.areaOfInterest, "Why Join": application.motivation, Expectations: application.expectations || "", Status: application.status || "Pending", "Registration Fee": application.paymentStatus || "Unpaid", "Submitted At": application.createdAt }));
     const format = url.searchParams.get("format") === "xlsx" ? "xlsx" : "csv";
     if (format === "csv") {
       const sheet = XLSX.utils.json_to_sheet(rows);

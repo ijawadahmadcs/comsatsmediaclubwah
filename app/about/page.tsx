@@ -221,11 +221,6 @@ export default function AboutPage() {
 
       </section>
 
-
-      {/* =====================================================
-          WHAT WE DO
-      ===================================================== */}
-
        {/* What We Do */}
       <section className="border-y border-white/10 bg-white/[0.015] px-4 py-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
