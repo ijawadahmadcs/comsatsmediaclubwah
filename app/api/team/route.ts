@@ -22,6 +22,26 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const isNonEmptyString = (value: unknown): value is string =>
   typeof value === "string" && value.trim().length > 0;
 
+const coreRoles = new Set([
+  "president",
+  "vice president",
+  "general secretary",
+  "treasurer",
+  "media/communications secretary",
+]);
+
+const leadRoles = new Set([
+  "videographylead",
+  "videoeditinglead",
+  "photographylead",
+  "graphicslead",
+  "contentcreationlead",
+]);
+
+function normalizedRole(role: string) {
+  return role.trim().toLowerCase().replace(/\s*\/\s*/g, "/");
+}
+
 const parseMember = (body: Record<string, unknown>) => {
   if (!isNonEmptyString(body.name) || !isNonEmptyString(body.role)) {
     return { error: "Name and role are required." } as const;
@@ -68,8 +88,17 @@ export async function GET() {
         .sort({ createdAt: 1 })
         .lean(),
     ]);
-    console.info("[TEAM] Team lookup completed", { count: members.length, acceptedCount: acceptedApplicants.length });
-    return NextResponse.json({ success: true, members, acceptedApplicants });
+    const coreOrLeadRegistrations = new Set(
+      members
+        .filter((member) => coreRoles.has(normalizedRole(member.role)) || leadRoles.has(normalizedRole(member.role).replace(/\s+/g, "")))
+        .map((member) => member.registrationNumber)
+        .filter(Boolean),
+    );
+    const eligibleGeneralApplicants = acceptedApplicants.filter(
+      (applicant) => !coreOrLeadRegistrations.has(applicant.registrationNumber),
+    );
+    console.info("[TEAM] Team lookup completed", { count: members.length, acceptedCount: eligibleGeneralApplicants.length });
+    return NextResponse.json({ success: true, members, acceptedApplicants: eligibleGeneralApplicants });
   } catch (error) {
     console.error("[TEAM GET ERROR]", error instanceof Error ? { name: error.name, message: error.message.replace(/(mongodb(?:\+srv)?:\/\/)[^\s]+/gi, "$1[redacted]") } : { name: "UnknownError" });
     return NextResponse.json(
