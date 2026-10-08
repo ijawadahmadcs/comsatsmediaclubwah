@@ -25,11 +25,12 @@ async function hasValidSession(token: string | undefined) {
 }
 
 export async function proxy(request: NextRequest) {
-  if (request.nextUrl.pathname === "/admin/login") return NextResponse.next();
+  if (request.nextUrl.pathname === "/admin/login" || request.nextUrl.pathname === "/team-lead/login") return NextResponse.next();
   if (!(await hasValidSession(request.cookies.get(cookieName)?.value))) {
-    return NextResponse.redirect(new URL("/admin/login", request.url));
+    const loginPath = request.nextUrl.pathname.startsWith("/team-lead") ? "/team-lead/login" : "/admin/login";
+    return NextResponse.redirect(new URL(loginPath, request.url));
   }
   return NextResponse.next();
 }
 
-export const config = { matcher: ["/admin/:path*"] };
+export const config = { matcher: ["/admin/:path*", "/team-lead/:path*"] };

@@ -65,7 +65,10 @@ export default function AdminLayout({
     { href: "/admin/team", label: "Team", icon: Users },
     { href: "/admin/work", label: "Work Gallery", icon: ImageIcon },
     ...(admin?.role === "superadmin"
-      ? [{ href: "/admin/admins", label: "Admins", icon: Shield }]
+      ? [
+          { href: "/admin/admins", label: "Admins", icon: Shield },
+          { href: "/admin/team-leads", label: "Team Leads", icon: Users },
+        ]
       : []),
   ];
 

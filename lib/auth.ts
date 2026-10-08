@@ -12,7 +12,8 @@ export type AuthAdmin = {
   id: string;
   registrationNumber: string;
   name?: string;
-  role: "admin" | "superadmin";
+  role: "admin" | "superadmin" | "teamlead";
+  team?: string;
 };
 
 type SessionPayload = AuthAdmin & { exp: number };
@@ -133,6 +134,7 @@ export async function authenticateAdmin(registrationNumber: string, password: st
     registrationNumber: admin.registrationNumber,
     name: admin.name,
     role: admin.role as AuthAdmin["role"],
+    team: admin.team,
   } satisfies AuthAdmin;
 }
 
@@ -155,6 +157,7 @@ export async function requireApiAdmin() {
       registrationNumber: admin.registrationNumber,
       name: admin.name,
       role: admin.role as AuthAdmin["role"],
+      team: admin.team,
     } satisfies AuthAdmin;
   } catch (error) {
     console.error("[AUTH] Protected admin lookup failed", error instanceof Error ? { name: error.name, message: error.message.replace(/(mongodb(?:\+srv)?:\/\/)[^\s]+/gi, "$1[redacted]") } : { name: "UnknownError" });

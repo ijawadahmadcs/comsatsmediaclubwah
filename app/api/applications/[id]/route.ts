@@ -38,6 +38,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           role: "General Member",
           department: application.department,
           registrationNumber: application.registrationNumber,
+          team: application.areaOfInterest,
           contactNumber: application.contactNumber,
           semester: Number(application.semester) || undefined,
           areaOfInterest: application.areaOfInterest,

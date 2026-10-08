@@ -4,9 +4,15 @@ const teamMemberSchema = new Schema(
   {
     name: { type: String, required: true, trim: true },
     role: { type: String, required: true, trim: true },
+    team: { type: String, trim: true, index: true },
     department: { type: String, trim: true },
     registrationNumber: { type: String, trim: true },
-    applicationId: { type: Schema.Types.ObjectId, ref: "Application", unique: true, sparse: true },
+    applicationId: {
+      type: Schema.Types.ObjectId,
+      ref: "Application",
+      unique: true,
+      sparse: true,
+    },
     contactNumber: { type: String, trim: true },
     semester: { type: Number },
     areaOfInterest: { type: String, trim: true },
