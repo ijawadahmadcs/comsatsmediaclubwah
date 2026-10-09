@@ -24,7 +24,7 @@ const socials = [
   },
   {
     name: "LinkedIn",
-    href: "#",
+    href: "https://www.linkedin.com/company/comsats-media-club",
   },
 ];
 

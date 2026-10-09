@@ -35,21 +35,44 @@ export default function TeamLeadLoginPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#08090b] px-4 text-white">
-      <form onSubmit={handleSubmit} className="w-full max-w-md space-y-5 rounded-xl border border-white/10 bg-[#0f1216] p-6 shadow-2xl">
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-md space-y-5 rounded-xl border border-white/10 bg-[#0f1216] p-6 shadow-2xl"
+      >
         <div>
           <h1 className="text-2xl font-semibold">Team Lead Portal</h1>
-          <p className="mt-2 text-sm text-white/55">Sign in with your team lead account.</p>
+          <p className="mt-2 text-sm text-white/55">
+            Sign in with your team lead account.
+          </p>
         </div>
-        {error && <p className="rounded-lg border border-red-400/30 bg-red-400/10 p-3 text-sm text-red-200">{error}</p>}
+        {error && (
+          <p className="rounded-lg border border-red-400/30 bg-red-400/10 p-3 text-sm text-red-200">
+            {error}
+          </p>
+        )}
         <label className="block text-sm">
           Registration number
-          <input required value={registrationNumber} onChange={(event) => setRegistrationNumber(event.target.value)} className="mt-2 w-full rounded-lg border border-white/15 bg-black/20 px-3 py-2 outline-none focus:border-white/50" />
+          <input
+            required
+            value={registrationNumber}
+            onChange={(event) => setRegistrationNumber(event.target.value)}
+            className="mt-2 w-full rounded-lg border border-white/15 bg-black/20 px-3 py-2 outline-none focus:border-white/50"
+          />
         </label>
         <label className="block text-sm">
           Password
-          <input required type="password" value={password} onChange={(event) => setPassword(event.target.value)} className="mt-2 w-full rounded-lg border border-white/15 bg-black/20 px-3 py-2 outline-none focus:border-white/50" />
+          <input
+            required
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            className="mt-2 w-full rounded-lg border border-white/15 bg-black/20 px-3 py-2 outline-none focus:border-white/50"
+          />
         </label>
-        <button disabled={loading} className="w-full rounded-lg bg-white px-4 py-2.5 font-medium text-black disabled:cursor-not-allowed disabled:opacity-50">
+        <button
+          disabled={loading}
+          className="w-full rounded-lg bg-white px-4 py-2.5 font-medium text-black disabled:cursor-not-allowed disabled:opacity-50"
+        >
           {loading ? "Signing in..." : "Sign in"}
         </button>
       </form>
