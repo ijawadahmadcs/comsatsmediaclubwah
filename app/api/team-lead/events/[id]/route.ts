@@ -130,6 +130,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: "rating must be 1‑5" }, { status: 400 });
     }
     if (remark !== undefined && (typeof remark !== "string" || remark.length > 1000)) return NextResponse.json({ error: "Remark must be 1000 characters or fewer" }, { status: 400 });
+    if (!event.ratings) event.ratings = new Map();
+    if (!event.remarks) event.remarks = new Map();
     event.ratings.set(memberId, rating);
     if (typeof remark === "string") event.remarks.set(memberId, remark.trim());
     await event.save();

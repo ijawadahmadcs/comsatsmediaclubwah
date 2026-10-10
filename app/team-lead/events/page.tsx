@@ -4,7 +4,9 @@ import {
   CalendarDays,
   CheckCircle2,
   Clock3,
+  Pencil,
   Plus,
+  Trash2,
   Users,
   X,
 } from "lucide-react";
@@ -49,6 +51,7 @@ export default function TeamLeadEvents() {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<EventRecord | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState<FormState>(emptyForm);
@@ -82,22 +85,24 @@ export default function TeamLeadEvents() {
     return () => window.clearTimeout(timer);
   }, []);
 
-  async function handleCreate(event: FormEvent<HTMLFormElement>) {
+  async function handleSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
     setError("");
     try {
-      const response = await fetch("/api/team-lead/events", {
-        method: "POST",
+      const response = await fetch(editingEvent ? `/api/team-lead/events/${editingEvent._id}` : "/api/team-lead/events", {
+        method: editingEvent ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
       const result = await response.json();
-      if (!response.ok)
-        throw new Error(result.error || "Unable to create event.");
-      setEvents((current) => [result.event, ...current]);
+      if (!response.ok) throw new Error(result.error || (editingEvent ? "Unable to update event." : "Unable to create event."));
+      setEvents((current) => editingEvent
+        ? current.map((currentEvent) => currentEvent._id === editingEvent._id ? result.event : currentEvent)
+        : [result.event, ...current]);
       setForm(emptyForm);
       setShowCreate(false);
+      setEditingEvent(null);
     } catch (createError) {
       setError(
         createError instanceof Error
@@ -107,6 +112,34 @@ export default function TeamLeadEvents() {
     } finally {
       setSaving(false);
     }
+  }
+
+  function openCreate() {
+    setEditingEvent(null);
+    setForm(emptyForm);
+    setShowCreate(true);
+  }
+
+  function openEdit(event: EventRecord) {
+    setEditingEvent(event);
+    setForm({
+      title: event.title,
+      description: event.description || "",
+      date: new Date(event.date).toISOString().slice(0, 16),
+      assignedMemberIds: event.assignedMembers.map((member) => member._id),
+    });
+    setShowCreate(true);
+  }
+
+  async function deleteEvent(event: EventRecord) {
+    if (!window.confirm(`Delete "${event.title}"? This cannot be undone.`)) return;
+    const response = await fetch(`/api/team-lead/events/${event._id}`, { method: "DELETE" });
+    const result = await response.json();
+    if (!response.ok) {
+      setError(result.error || "Unable to delete event.");
+      return;
+    }
+    setEvents((current) => current.filter((currentEvent) => currentEvent._id !== event._id));
   }
 
   function toggleMember(id: string) {
@@ -137,7 +170,7 @@ export default function TeamLeadEvents() {
           </div>
           <button
             type="button"
-            onClick={() => setShowCreate(true)}
+            onClick={openCreate}
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-grey-100"
           >
             <Plus size={17} /> New event
@@ -187,7 +220,7 @@ export default function TeamLeadEvents() {
             </p>
             <button
               type="button"
-              onClick={() => setShowCreate(true)}
+              onClick={openCreate}
               className="mt-6 rounded-xl border border-white/15 px-4 py-2.5 text-sm text-white/75 transition hover:bg-white/10"
             >
               Create event
@@ -196,7 +229,7 @@ export default function TeamLeadEvents() {
         ) : (
           <div className="mt-5 grid gap-3 md:grid-cols-2">
             {events.map((event) => (
-              <EventCard key={event._id} event={event} />
+              <EventCard key={event._id} event={event} onEdit={openEdit} onDelete={deleteEvent} />
             ))}
           </div>
         )}
@@ -210,18 +243,18 @@ export default function TeamLeadEvents() {
                 <p className="text-xs uppercase tracking-[0.2em] text-grey-300/70">
                   New record
                 </p>
-                <h2 className="mt-2 text-2xl font-semibold">Create an event</h2>
+                <h2 className="mt-2 text-2xl font-semibold">{editingEvent ? "Edit event" : "Create an event"}</h2>
               </div>
               <button
                 type="button"
-                onClick={() => setShowCreate(false)}
+                onClick={() => { setShowCreate(false); setEditingEvent(null); }}
                 aria-label="Close create event dialog"
                 className="rounded-lg p-2 text-white/45 hover:bg-white/10 hover:text-white"
               >
                 <X size={18} />
               </button>
             </div>
-            <form onSubmit={handleCreate} className="mt-7 space-y-5">
+            <form onSubmit={handleSave} className="mt-7 space-y-5">
               <label className="block text-sm text-white/70">
                 Title
                 <input
@@ -298,7 +331,7 @@ export default function TeamLeadEvents() {
               <div className="flex justify-end gap-3 border-t border-white/10 pt-5">
                 <button
                   type="button"
-                  onClick={() => setShowCreate(false)}
+                  onClick={() => { setShowCreate(false); setEditingEvent(null); }}
                   className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 hover:bg-white/10"
                 >
                   Cancel
@@ -307,7 +340,7 @@ export default function TeamLeadEvents() {
                   disabled={saving}
                   className="rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black disabled:opacity-50"
                 >
-                  {saving ? "Creating..." : "Create event"}
+                  {saving ? "Saving..." : editingEvent ? "Save changes" : "Create event"}
                 </button>
               </div>
             </form>
@@ -318,44 +351,17 @@ export default function TeamLeadEvents() {
   );
 }
 
-function EventCard({ event }: { event: EventRecord }) {
+function EventCard({ event, onEdit, onDelete }: { event: EventRecord; onEdit: (event: EventRecord) => void; onDelete: (event: EventRecord) => void }) {
   return (
-    <Link
-      href={`/team-lead/events/${event._id}`}
-      className="group rounded-2xl border border-white/10 bg-[#0d1114] p-5 transition hover:border-grey-300/30 hover:bg-[#11191d] sm:p-6"
-    >
+    <div className="group rounded-2xl border border-white/10 bg-[#0d1114] p-5 transition hover:border-grey-300/30 hover:bg-[#11191d] sm:p-6">
       <div className="flex items-start justify-between gap-4">
         <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-grey-300/10 text-grey-200">
           <CalendarDays size={20} />
         </div>
-        <span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-2.5 py-1 text-[11px] text-emerald-200">
-          Active
-        </span>
+        <div className="flex items-center gap-2"><button type="button" onClick={() => onEdit(event)} aria-label={`Edit ${event.title}`} className="rounded-lg border border-white/10 p-2 text-white/45 transition hover:border-white/25 hover:text-white"><Pencil size={15} /></button><button type="button" onClick={() => void onDelete(event)} aria-label={`Delete ${event.title}`} className="rounded-lg border border-red-300/15 p-2 text-red-200/60 transition hover:border-red-300/40 hover:text-red-100"><Trash2 size={15} /></button></div>
       </div>
-      <h3 className="mt-6 text-xl font-medium text-white/90">{event.title}</h3>
-      {event.description && (
-        <p className="mt-2 line-clamp-2 text-sm leading-6 text-white/40">
-          {event.description}
-        </p>
-      )}
-      <div className="mt-6 flex flex-wrap gap-4 border-t border-white/[0.08] pt-4 text-xs text-white/45">
-        <span className="inline-flex items-center gap-2">
-          <Clock3 size={14} />
-          {new Date(event.date).toLocaleString()}
-        </span>
-        <span className="inline-flex items-center gap-2">
-          <Users size={14} />
-          {event.assignedMembers?.length ?? 0} assigned
-        </span>
-      </div>
-      <div className="mt-5 flex items-center gap-2 text-sm text-grey-200">
-        Open event{" "}
-        <CheckCircle2
-          size={15}
-          className="transition group-hover:translate-x-1"
-        />
-      </div>
-    </Link>
+      <Link href={`/team-lead/events/${event._id}`} className="block"><h3 className="mt-6 text-xl font-medium text-white/90">{event.title}</h3>{event.description && <p className="mt-2 line-clamp-2 text-sm leading-6 text-white/40">{event.description}</p>}<div className="mt-6 flex flex-wrap gap-4 border-t border-white/[0.08] pt-4 text-xs text-white/45"><span className="inline-flex items-center gap-2"><Clock3 size={14} />{new Date(event.date).toLocaleString()}</span><span className="inline-flex items-center gap-2"><Users size={14} />{event.assignedMembers?.length ?? 0} assigned</span></div><div className="mt-5 flex items-center gap-2 text-sm text-grey-200">Open event <CheckCircle2 size={15} className="transition group-hover:translate-x-1" /></div></Link>
+    </div>
   );
 }
 

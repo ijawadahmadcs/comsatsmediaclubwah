@@ -11,9 +11,9 @@ const eventSchema = new Schema(
     assignedMembers: [{ type: Types.ObjectId, ref: "TeamMember" }],
     attendance: [{ type: Types.ObjectId, ref: "TeamMember" }],
     // rating: memberId -> rating (1-5)
-    ratings: { type: Map, of: { type: Number, min: 1, max: 5 } },
+    ratings: { type: Map, of: { type: Number, min: 1, max: 5 }, default: () => new Map() },
     // remarks: memberId -> comment string
-    remarks: { type: Map, of: String },
+    remarks: { type: Map, of: String, default: () => new Map() },
   },
   { timestamps: true, versionKey: false }
 );
