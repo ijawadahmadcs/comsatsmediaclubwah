@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Pencil, Plus, Trash2, X } from "lucide-react";
+import { checkUploadFile, uploadDirectToCloudinary } from "@/lib/directUpload";
 
 type FormValues = {
   name: string;
@@ -198,23 +199,13 @@ export default function TeamManagementPage() {
       let image = form.image;
       if (imageFile) {
         setIsUploading(true);
-        const uploadData = new FormData();
-        uploadData.append("file", imageFile);
-        const uploadResponse = await fetch("/api/upload", {
-          method: "POST",
-          body: uploadData,
-          credentials: "include",
-        });
-        const uploadResult = await uploadResponse.json();
-        if (uploadResponse.status === 401) {
-          router.replace("/admin/login");
-          throw new Error(
-            "Your admin session has expired. Please sign in again.",
-          );
+        try {
+          // Uploaded straight to Cloudinary, so large photos are not limited by Vercel's body size limit.
+          image = (await uploadDirectToCloudinary(imageFile, "team-photo")).secureUrl;
+        } catch (uploadError) {
+          if ((uploadError as { status?: number }).status === 401) router.replace("/admin/login");
+          throw uploadError;
         }
-        if (!uploadResponse.ok || !uploadResult.success)
-          throw new Error(uploadResult.message || "Unable to upload image.");
-        image = uploadResult.secure_url;
       }
       const response = await fetch(url, {
         method: editingMember ? "PUT" : "POST",
@@ -590,9 +581,13 @@ export default function TeamManagementPage() {
                   <input
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
-                    onChange={(event) =>
-                      setImageFile(event.target.files?.[0] || null)
-                    }
+                    onChange={(event) => {
+                      const selected = event.target.files?.[0] || null;
+                      const error = selected ? checkUploadFile(selected, "team-photo") : null;
+                      if (error) event.target.value = "";
+                      setFormError(error || "");
+                      setImageFile(error ? null : selected);
+                    }}
                     className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white/60 file:mr-4 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:text-sm file:text-black"
                   />
                   {form.image && (

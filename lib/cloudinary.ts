@@ -1,14 +1,8 @@
 import { v2 as cloudinary } from "cloudinary";
 import { logServerError } from "@/lib/api";
+import { CLOUDINARY_FOLDERS, IMAGE_FORMATS, UPLOAD_PURPOSES, type UploadPurpose } from "@/lib/mediaRules";
 
-export const CLOUDINARY_FOLDERS = {
-  applications: "media-club/applications",
-  team: "media-club/team",
-  work: "media-club/work",
-} as const;
-
-export const IMAGE_FORMATS = ["jpg", "png", "webp"] as const;
-export const VIDEO_FORMATS = ["mp4", "webm", "mov"] as const;
+export { CLOUDINARY_FOLDERS, IMAGE_FORMATS };
 
 export function getCloudinary() {
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME?.trim();
@@ -70,6 +64,69 @@ export function uploadImageBuffer(buffer: Buffer, folder: string) {
   });
 }
 
+/**
+ * Signs a direct browser-to-Cloudinary upload. The signature covers the folder and the allowed
+ * formats, so the browser cannot change them, and it expires after an hour.
+ */
+export function createSignedUpload(purpose: UploadPurpose) {
+  const rules = UPLOAD_PURPOSES[purpose];
+  const client = getCloudinary();
+  const { cloud_name: cloudName, api_key: apiKey, api_secret: apiSecret } = client.config();
+  const params = {
+    timestamp: Math.floor(Date.now() / 1000),
+    folder: rules.folder,
+    allowed_formats: rules.formats.join(","),
+  };
+  const signature = client.utils.api_sign_request(params, apiSecret as string);
+  return {
+    uploadUrl: `https://api.cloudinary.com/v1_1/${cloudName}/${rules.resourceType}/upload`,
+    fields: { ...params, api_key: apiKey as string, signature },
+    maxBytes: rules.maxBytes,
+  };
+}
+
+type CloudinaryResource = {
+  public_id: string;
+  secure_url: string;
+  resource_type: string;
+  format: string;
+  bytes: number;
+  asset_folder?: string;
+  folder?: string;
+};
+
+/**
+ * Looks up an asset that the browser says it uploaded, and checks it matches the upload rules.
+ * Assets in the wrong place or over the size limit are deleted. Returns null if invalid.
+ */
+export async function verifyDirectUpload(publicId: string, purpose: UploadPurpose) {
+  const rules = UPLOAD_PURPOSES[purpose];
+  let resource: CloudinaryResource;
+  try {
+    resource = (await getCloudinary().api.resource(publicId, { resource_type: rules.resourceType })) as CloudinaryResource;
+  } catch {
+    return null;
+  }
+  // Fixed-folder accounts prefix the public id with the folder; dynamic-folder accounts report asset_folder.
+  const inFolder =
+    resource.public_id.startsWith(`${rules.folder}/`) || resource.asset_folder === rules.folder || resource.folder === rules.folder;
+  const validFormat = (rules.formats as readonly string[]).includes(resource.format?.toLowerCase());
+  if (!inFolder) return null;
+  if (!validFormat || resource.bytes > rules.maxBytes) {
+    await destroyCloudinaryAsset(resource.public_id, rules.resourceType);
+    return null;
+  }
+  return { publicId: resource.public_id, secureUrl: resource.secure_url, resourceType: rules.resourceType };
+}
+
+export async function destroyCloudinaryAsset(publicId: string, resourceType: CloudinaryAsset["resourceType"]) {
+  try {
+    await getCloudinary().uploader.destroy(publicId, { resource_type: resourceType, invalidate: true });
+  } catch (error) {
+    logServerError("[CLOUDINARY] Unable to delete asset", error);
+  }
+}
+
 /** Deletes assets by URL. Best effort: failures are logged and never thrown. */
 export async function destroyCloudinaryUrls(urls: (string | null | undefined)[]) {
   const assets = new Map<string, CloudinaryAsset>();
@@ -77,13 +134,5 @@ export async function destroyCloudinaryUrls(urls: (string | null | undefined)[])
     const asset = parseOwnCloudinaryUrl(url);
     if (asset) assets.set(`${asset.resourceType}:${asset.publicId}`, asset);
   }
-  await Promise.all(
-    [...assets.values()].map(async (asset) => {
-      try {
-        await getCloudinary().uploader.destroy(asset.publicId, { resource_type: asset.resourceType, invalidate: true });
-      } catch (error) {
-        logServerError("[CLOUDINARY] Unable to delete asset", error);
-      }
-    }),
-  );
+  await Promise.all([...assets.values()].map((asset) => destroyCloudinaryAsset(asset.publicId, asset.resourceType)));
 }
