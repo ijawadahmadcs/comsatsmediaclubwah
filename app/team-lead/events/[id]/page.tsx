@@ -49,7 +49,9 @@ export default function EventDetail() {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Unable to load event.");
       setEvent(result.event);
-      setAttendanceSet(new Set(result.event?.attendance ?? []));
+      // Only members still assigned to the event can be marked present.
+      const assignedIds = new Set<string>((result.event?.assignedMembers ?? []).map((member: Member) => member._id));
+      setAttendanceSet(new Set((result.event?.attendance ?? []).filter((memberId: string) => assignedIds.has(memberId))));
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Unable to load event.");
     } finally {
