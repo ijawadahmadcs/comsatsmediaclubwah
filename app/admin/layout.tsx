@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
+  History,
   Image as ImageIcon,
   LayoutDashboard,
   LogOut,
@@ -17,7 +18,7 @@ import Image from "next/image";
 type Admin = {
   name?: string;
   registrationNumber: string;
-  role: "admin" | "superadmin";
+  role: "admin" | "superadmin" | "teamlead";
 };
 
 export default function AdminLayout({
@@ -29,20 +30,39 @@ export default function AdminLayout({
   const router = useRouter();
   const [admin, setAdmin] = useState<Admin | null>(null);
   const [open, setOpen] = useState(false);
+  const [unavailable, setUnavailable] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     if (pathname === "/admin/login") return;
+    let cancelled = false;
     fetch("/api/auth/me")
       .then(async (response) => {
+        if (cancelled) return;
+        // 503 means the database is unreachable; the session may still be valid, so do not sign out.
+        if (response.status === 503) {
+          setUnavailable(true);
+          return;
+        }
         if (!response.ok) {
           router.replace("/admin/login");
           return;
         }
         const result = await response.json();
+        if (result.admin?.role === "teamlead") {
+          router.replace("/team-lead/dashboard");
+          return;
+        }
+        setUnavailable(false);
         setAdmin(result.admin);
       })
-      .catch(() => router.replace("/admin/login"));
-  }, [pathname, router]);
+      .catch(() => {
+        if (!cancelled) setUnavailable(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname, router, retryCount]);
 
   useEffect(() => {
     function closeOnEscape(event: KeyboardEvent) {
@@ -59,6 +79,26 @@ export default function AdminLayout({
 
   if (pathname === "/admin/login") return <>{children}</>;
 
+  if (unavailable) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#08090b] px-5 text-white">
+        <div className="max-w-md rounded-2xl border border-white/10 bg-[#0b0d10] p-8 text-center">
+          <h1 className="text-2xl font-semibold">Service unavailable</h1>
+          <p className="mt-3 text-sm leading-6 text-white/45">
+            The admin panel cannot reach the database right now. Your session is still valid; please try again in a moment.
+          </p>
+          <button
+            type="button"
+            onClick={() => setRetryCount((count) => count + 1)}
+            className="mt-6 rounded-full bg-white px-5 py-3 text-sm font-medium text-black transition hover:bg-white/90"
+          >
+            Try again
+          </button>
+        </div>
+      </main>
+    );
+  }
+
   const links = [
     { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
     { href: "/admin/applications", label: "Applications", icon: Shield },
@@ -68,6 +108,7 @@ export default function AdminLayout({
       ? [
           { href: "/admin/admins", label: "Admins", icon: Shield },
           { href: "/admin/team-leads", label: "Team Leads", icon: Users },
+          { href: "/admin/activity", label: "Activity", icon: History },
         ]
       : []),
   ];

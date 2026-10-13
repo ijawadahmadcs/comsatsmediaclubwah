@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { requireApiAdmin } from "@/lib/auth";
+import { requireApiStaff } from "@/lib/auth";
 import connectToDatabase from "@/lib/mongodb";
 import Application from "@/models/Application";
 import TeamMember from "@/models/TeamMember";
 
 export async function GET() {
-  if (!(await requireApiAdmin())) return NextResponse.json({ success: false, message: "Unauthorized." }, { status: 401 });
+  const auth = await requireApiStaff();
+  if (!auth.ok) return auth.response;
   try {
     await connectToDatabase();
     const [totalTeamMembers, totalApplications, pendingApplications, acceptedApplications, recentApplications] = await Promise.all([

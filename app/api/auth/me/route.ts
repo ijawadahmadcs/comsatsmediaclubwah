@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { requireApiAdmin } from "@/lib/auth";
+import { requireApiSession } from "@/lib/auth";
 
+// Used by both portals; the client checks `admin.role` to decide which portal the account belongs to.
 export async function GET() {
-  const admin = await requireApiAdmin();
-  if (!admin) return NextResponse.json({ success: false, message: "Unauthorized." }, { status: 401 });
-  return NextResponse.json({ success: true, admin });
+  const auth = await requireApiSession();
+  if (!auth.ok) return auth.response;
+  return NextResponse.json({ success: true, admin: auth.account });
 }

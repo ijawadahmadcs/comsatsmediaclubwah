@@ -1,14 +1,13 @@
 import mongoose from "mongoose";
 import { NextResponse } from "next/server";
-import { requireApiAdmin } from "@/lib/auth";
+import { requireApiStaff } from "@/lib/auth";
 import connectToDatabase from "@/lib/mongodb";
 import Application from "@/models/Application";
 import TeamMember from "@/models/TeamMember";
 
 export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  if (!(await requireApiAdmin())) {
-    return NextResponse.json({ success: false, message: "Unauthorized." }, { status: 401 });
-  }
+  const auth = await requireApiStaff();
+  if (!auth.ok) return auth.response;
 
   const { id } = await params;
   if (!mongoose.isValidObjectId(id)) {

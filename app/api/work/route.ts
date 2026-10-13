@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireApiAdmin } from "@/lib/auth";
+import { requireApiStaff } from "@/lib/auth";
 import connectToDatabase from "@/lib/mongodb";
 import { getCloudinary } from "@/lib/cloudinary";
 import WorkAsset from "@/models/WorkAsset";
@@ -22,7 +22,8 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  if (!(await requireApiAdmin())) return NextResponse.json({ success: false, message: "Unauthorized." }, { status: 401 });
+  const auth = await requireApiStaff();
+  if (!auth.ok) return auth.response;
 
   try {
     const formData = await request.formData();

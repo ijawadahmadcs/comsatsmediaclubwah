@@ -1,26 +1,41 @@
-// src/app/api/admin/team-leads/create/route.ts
 import { NextResponse } from "next/server";
+import { isDuplicateKeyError, isNonEmptyString, jsonError, readJsonObject, serverError } from "@/lib/api";
+import { recordAudit } from "@/lib/audit";
 import { requireApiSuperAdmin } from "@/lib/auth";
-import { createTeamLead } from "@/lib/teamlead";
+import connectToDatabase from "@/lib/mongodb";
+import { getPasswordError } from "@/lib/password";
+import { InvalidTeamError, createTeamLead, publicTeamLead } from "@/lib/teamlead";
 
-export async function POST(req: Request) {
-  if (!(await requireApiSuperAdmin())) return NextResponse.json({ error: "Superadmin access required." }, { status: 403 });
-  let body: unknown;
-  try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
-  if (!body || typeof body !== "object" || Array.isArray(body)) return NextResponse.json({ error: "Invalid request" }, { status: 400 });
-  const { name, registrationNumber, password, team, isActive } = body as Record<string, unknown>;
-  if (typeof name !== "string" || typeof registrationNumber !== "string" || typeof password !== "string" || typeof team !== "string" || !name.trim() || !registrationNumber.trim() || password.length < 8 || !team.trim()) {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+export async function POST(request: Request) {
+  const auth = await requireApiSuperAdmin();
+  if (!auth.ok) return auth.response;
+  const body = await readJsonObject(request);
+  if (!body) return jsonError("Invalid request data.", 400);
+  const { name, registrationNumber, password, team, isActive } = body;
+  if (
+    !isNonEmptyString(name) || name.trim().length > 100 ||
+    !isNonEmptyString(registrationNumber) || registrationNumber.trim().length > 40 ||
+    !isNonEmptyString(team) ||
+    (isActive !== undefined && typeof isActive !== "boolean")
+  ) {
+    return jsonError("Name, registration number and team are required.", 400);
   }
+  const passwordError = getPasswordError(password);
+  if (passwordError) return jsonError(passwordError, 400);
+
   try {
-    const admin = await createTeamLead({ name, registrationNumber, password, team, isActive: isActive !== false });
-    const rest = admin.toObject();
-    delete rest.passwordHash;
-    delete rest.__v;
-    return NextResponse.json({ teamLead: rest }, { status: 201 });
+    await connectToDatabase();
+    const admin = await createTeamLead({ name, registrationNumber, password: password as string, team, isActive: isActive !== false });
+    await recordAudit(auth.account, {
+      action: "teamlead_created",
+      targetType: "admin",
+      targetId: admin._id.toString(),
+      details: { registrationNumber: admin.registrationNumber, name: admin.name, team: admin.team },
+    });
+    return NextResponse.json({ success: true, teamLead: publicTeamLead(admin) }, { status: 201 });
   } catch (error) {
-    if (error instanceof Error && error.message.includes("duplicate key")) return NextResponse.json({ error: "Registration number already exists." }, { status: 409 });
-    if (error instanceof Error && error.message.includes("Invalid Team Lead team")) return NextResponse.json({ error: error.message }, { status: 400 });
-    return NextResponse.json({ error: "Unable to create Team Lead." }, { status: 500 });
+    if (isDuplicateKeyError(error)) return jsonError("Registration number already exists.", 409);
+    if (error instanceof InvalidTeamError) return jsonError(error.message, 400);
+    return serverError("[TEAM LEAD CREATE ERROR]", error, "Unable to create Team Lead.");
   }
 }

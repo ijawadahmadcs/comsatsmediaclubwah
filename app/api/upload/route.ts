@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCloudinary } from "@/lib/cloudinary";
-import { requireApiAdmin } from "@/lib/auth";
+import { requireApiStaff } from "@/lib/auth";
 
 const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 const maxSize = 5 * 1024 * 1024;
@@ -9,13 +9,8 @@ export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   console.info("[UPLOAD] Team image upload request received");
-  const admin = await requireApiAdmin();
-  if (!admin) {
-    console.warn("[UPLOAD] Unauthorized upload request", {
-      hasCookie: request.headers.get("cookie")?.includes("media_club_admin_session") ?? false,
-    });
-    return NextResponse.json({ success: false, message: "Your admin session has expired. Please sign in again." }, { status: 401 });
-  }
+  const auth = await requireApiStaff();
+  if (!auth.ok) return auth.response;
 
   try {
     const formData = await request.formData();

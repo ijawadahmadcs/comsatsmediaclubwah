@@ -12,8 +12,9 @@ import { getTeamScope } from "@/lib/teamScope";
  *  - avgRating (average of all member ratings across all events)
  */
 export async function GET() {
-  const lead = await requireTeamLead();
-  if (!lead) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireTeamLead();
+  if (!auth.ok) return auth.response;
+  const lead = auth.account;
 
   const teams = getTeamScope(lead.team);
 

@@ -11,8 +11,9 @@ import { getApprovedTeamMemberIds } from "@/lib/teamleadMembers";
  * Returns all events belonging to the logged‑in Team‑Lead's team.
  */
 export async function GET() {
-  const lead = await requireTeamLead();
-  if (!lead) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireTeamLead();
+  if (!auth.ok) return auth.response;
+  const lead = auth.account;
 
   const teamScope = getTeamScope(lead.team);
   const events = await Event.find({ team: { $in: teamScope } })
@@ -29,8 +30,9 @@ export async function GET() {
  * Expected body: { title, description?, date, assignedMemberIds?[] }
  */
 export async function POST(req: Request) {
-  const lead = await requireTeamLead();
-  if (!lead) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireTeamLead();
+  if (!auth.ok) return auth.response;
+  const lead = auth.account;
 
   let body: unknown;
   try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }

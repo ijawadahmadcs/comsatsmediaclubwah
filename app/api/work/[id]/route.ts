@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import { NextResponse } from "next/server";
-import { requireApiAdmin } from "@/lib/auth";
+import { requireApiStaff } from "@/lib/auth";
 import connectToDatabase from "@/lib/mongodb";
 import { getCloudinary } from "@/lib/cloudinary";
 import WorkAsset from "@/models/WorkAsset";
@@ -8,7 +8,8 @@ import WorkAsset from "@/models/WorkAsset";
 export const runtime = "nodejs";
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  if (!(await requireApiAdmin())) return NextResponse.json({ success: false, message: "Unauthorized." }, { status: 401 });
+  const auth = await requireApiStaff();
+  if (!auth.ok) return auth.response;
   const { id } = await params;
   if (!mongoose.isValidObjectId(id)) return NextResponse.json({ success: false, message: "Invalid work asset ID." }, { status: 400 });
 

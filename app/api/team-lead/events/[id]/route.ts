@@ -17,8 +17,9 @@ async function getOwnEvent(id: string, leadTeam: string) {
 
 /** GET single event */
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const lead = await requireTeamLead();
-  if (!lead) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireTeamLead();
+  if (!auth.ok) return auth.response;
+  const lead = auth.account;
   const { id } = await params;
   const event = await getOwnEvent(id, lead.team);
   if (!event) return NextResponse.json({ error: "Event not found" }, { status: 404 });
@@ -27,8 +28,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
 /** PUT update event */
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const lead = await requireTeamLead();
-  if (!lead) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireTeamLead();
+  if (!auth.ok) return auth.response;
+  const lead = auth.account;
   const { id } = await params;
 
   let body: unknown;
@@ -70,8 +72,9 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
 /** DELETE event */
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const lead = await requireTeamLead();
-  if (!lead) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireTeamLead();
+  if (!auth.ok) return auth.response;
+  const lead = auth.account;
   const { id } = await params;
   if (!mongoose.isValidObjectId(id)) return NextResponse.json({ error: "Event not found" }, { status: 404 });
   const result = await Event.deleteOne({ _id: id, team: { $in: getTeamScope(lead.team) } });
@@ -93,8 +96,9 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const url = new URL(request.url);
   const action = url.searchParams.get("action");
-  const lead = await requireTeamLead();
-  if (!lead) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireTeamLead();
+  if (!auth.ok) return auth.response;
+  const lead = auth.account;
   const { id } = await params;
 
   const event = await Event.findOne({ _id: id, team: { $in: getTeamScope(lead.team) } });

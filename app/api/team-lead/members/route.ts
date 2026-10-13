@@ -4,8 +4,9 @@ import { getApprovedTeamMemberIds } from "@/lib/teamleadMembers";
 import TeamMember from "@/models/TeamMember";
 
 export async function GET() {
-  const lead = await requireTeamLead();
-  if (!lead) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireTeamLead();
+  if (!auth.ok) return auth.response;
+  const lead = auth.account;
 
   const approvedMemberIds = await getApprovedTeamMemberIds(lead.team);
   const members = await TeamMember.find({ _id: { $in: approvedMemberIds } })

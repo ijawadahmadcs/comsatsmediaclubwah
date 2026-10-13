@@ -1,26 +1,50 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { requireApiSuperAdmin } from "@/lib/auth";
+import { isDuplicateKeyError, jsonError, readJsonObject, serverError } from "@/lib/api";
+import { recordAudit } from "@/lib/audit";
+import { normalizeRegistrationNumber, requireApiSuperAdmin } from "@/lib/auth";
 import connectToDatabase from "@/lib/mongodb";
-import Admin from "@/models/Admin";
+import { getPasswordError } from "@/lib/password";
+import Admin, { type IAdmin } from "@/models/Admin";
 
-function publicAdmin(admin: { _id: { toString(): string }; registrationNumber: string; name?: string; role: string; isActive: boolean; createdAt: Date }) {
+type AdminRecord = Pick<IAdmin, "registrationNumber" | "name" | "role" | "isActive" | "createdAt"> & { _id: { toString(): string } };
+
+function publicAdmin(admin: AdminRecord) {
   return { _id: admin._id.toString(), registrationNumber: admin.registrationNumber, name: admin.name, role: admin.role, isActive: admin.isActive, createdAt: admin.createdAt };
 }
 
 export async function GET() {
-  if (!(await requireApiSuperAdmin())) return NextResponse.json({ success: false, message: "Forbidden." }, { status: 403 });
-  try { await connectToDatabase(); const admins = await Admin.find().sort({ createdAt: 1 }).lean(); return NextResponse.json({ success: true, admins: admins.map(publicAdmin) }); }
-  catch { return NextResponse.json({ success: false, message: "Unable to load administrators." }, { status: 500 }); }
+  const auth = await requireApiSuperAdmin();
+  if (!auth.ok) return auth.response;
+  try {
+    await connectToDatabase();
+    const admins = await Admin.find().sort({ createdAt: 1 }).lean();
+    return NextResponse.json({ success: true, admins: admins.map(publicAdmin) });
+  } catch (error) {
+    return serverError("[ADMINS GET ERROR]", error, "Unable to load administrators.");
+  }
 }
 
 export async function POST(request: Request) {
-  if (!(await requireApiSuperAdmin())) return NextResponse.json({ success: false, message: "Forbidden." }, { status: 403 });
+  const auth = await requireApiSuperAdmin();
+  if (!auth.ok) return auth.response;
+  const body = await readJsonObject(request);
+  const registrationNumber = typeof body?.registrationNumber === "string" ? normalizeRegistrationNumber(body.registrationNumber) : "";
+  if (!registrationNumber || registrationNumber.length > 40) return jsonError("A valid registration number is required.", 400);
+  if (body?.name !== undefined && (typeof body.name !== "string" || body.name.trim().length > 100)) {
+    return jsonError("Names must be 100 characters or fewer.", 400);
+  }
+  const passwordError = getPasswordError(body?.password);
+  if (passwordError) return jsonError(passwordError, 400);
+  const name = typeof body?.name === "string" && body.name.trim() ? body.name.trim() : undefined;
+
   try {
-    const body = await request.json();
-    if (typeof body?.registrationNumber !== "string" || typeof body?.password !== "string" || body.password.length < 8) return NextResponse.json({ success: false, message: "Registration number and a password of at least 8 characters are required." }, { status: 400 });
     await connectToDatabase();
-    const admin = await Admin.create({ registrationNumber: body.registrationNumber, passwordHash: await bcrypt.hash(body.password, 12), name: typeof body.name === "string" ? body.name : undefined, role: "admin" });
+    const admin = await Admin.create({ registrationNumber, passwordHash: await bcrypt.hash(body?.password as string, 12), name, role: "admin" });
+    await recordAudit(auth.account, { action: "admin_created", targetType: "admin", targetId: admin._id.toString(), details: { registrationNumber, name } });
     return NextResponse.json({ success: true, admin: publicAdmin(admin) }, { status: 201 });
-  } catch (error) { const duplicate = error instanceof Error && error.message.includes("duplicate"); return NextResponse.json({ success: false, message: duplicate ? "That registration number already exists." : "Unable to create administrator." }, { status: duplicate ? 409 : 500 }); }
+  } catch (error) {
+    if (isDuplicateKeyError(error)) return jsonError("That registration number already exists.", 409);
+    return serverError("[ADMINS POST ERROR]", error, "Unable to create administrator.");
+  }
 }

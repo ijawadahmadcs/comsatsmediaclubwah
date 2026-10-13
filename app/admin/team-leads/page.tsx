@@ -1,6 +1,8 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import PasswordDialog from "@/components/PasswordDialog";
+import { PASSWORD_MIN_LENGTH } from "@/lib/password";
 import { TEAM_LEAD_TEAMS } from "@/lib/teamScope";
 
 type TeamLead = {
@@ -35,6 +37,7 @@ export default function TeamLeadsPage() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [passwordTarget, setPasswordTarget] = useState<TeamLead | null>(null);
 
   async function loadTeamLeads() {
     try {
@@ -97,9 +100,16 @@ export default function TeamLeadsPage() {
     if (response.ok) void loadTeamLeads();
   }
 
-  function resetPassword(lead: TeamLead) {
-    const password = window.prompt("New password (8+ characters):");
-    if (password) void updateTeamLead(lead._id, { password }, "Password reset.");
+  async function resetPassword(lead: TeamLead, password: string) {
+    const response = await fetch(`/api/admin/team-leads/${lead._id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+    const result = await readApiResponse(response);
+    if (!response.ok) throw new Error(result.error || "Unable to reset the password.");
+    setPasswordTarget(null);
+    setMessage("Password reset. The Team Lead has been signed out everywhere.");
   }
 
   return (
@@ -113,7 +123,7 @@ export default function TeamLeadsPage() {
         <form onSubmit={createTeamLead} className="mt-8 grid gap-4 rounded-2xl border border-white/10 bg-[#0b0d10] p-6 sm:grid-cols-2 lg:grid-cols-4">
           <input required placeholder="Name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm outline-none" />
           <input required placeholder="Registration Number" value={form.registrationNumber} onChange={(event) => setForm({ ...form, registrationNumber: event.target.value })} className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm outline-none" />
-          <input required minLength={8} type="password" placeholder="Password (8+ characters)" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm outline-none" />
+          <input required minLength={PASSWORD_MIN_LENGTH} type="password" autoComplete="new-password" placeholder={`Password (${PASSWORD_MIN_LENGTH}+ characters)`} value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm outline-none" />
           <select required value={form.team} onChange={(event) => setForm({ ...form, team: event.target.value })} className="rounded-xl border border-white/10 bg-[#15191d] px-4 py-3 text-sm outline-none">
             {TEAM_LEAD_TEAMS.map((team) => <option key={team} value={team}>{team}</option>)}
           </select>
@@ -127,13 +137,20 @@ export default function TeamLeadsPage() {
             </thead>
             <tbody>
               {loading ? <tr><td colSpan={5} className="p-12 text-center text-white/40">Loading Team Leads...</td></tr> : teamLeads.map((lead) => (
-                <tr key={lead._id} className="border-b border-white/[0.06]"><td className="p-4">{lead.name || "-"}</td><td className="p-4 text-white/60">{lead.registrationNumber}</td><td className="p-4 text-white/60">{lead.team || "-"}</td><td className="p-4 text-white/60">{lead.isActive ? "Active" : "Inactive"}</td><td className="p-4"><div className="flex flex-wrap gap-2"><button type="button" onClick={() => void updateTeamLead(lead._id, { isActive: !lead.isActive }, lead.isActive ? "Team Lead deactivated." : "Team Lead activated.")} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/70">{lead.isActive ? "Deactivate" : "Activate"}</button><button type="button" onClick={() => resetPassword(lead)} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/70">Reset password</button><button type="button" onClick={() => void deleteTeamLead(lead)} className="rounded-lg border border-red-400/20 px-3 py-2 text-xs text-red-200">Delete</button></div></td></tr>
+                <tr key={lead._id} className="border-b border-white/[0.06]"><td className="p-4">{lead.name || "-"}</td><td className="p-4 text-white/60">{lead.registrationNumber}</td><td className="p-4 text-white/60">{lead.team || "-"}</td><td className="p-4 text-white/60">{lead.isActive ? "Active" : "Inactive"}</td><td className="p-4"><div className="flex flex-wrap gap-2"><button type="button" onClick={() => void updateTeamLead(lead._id, { isActive: !lead.isActive }, lead.isActive ? "Team Lead deactivated." : "Team Lead activated.")} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/70">{lead.isActive ? "Deactivate" : "Activate"}</button><button type="button" onClick={() => setPasswordTarget(lead)} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/70">Reset password</button><button type="button" onClick={() => void deleteTeamLead(lead)} className="rounded-lg border border-red-400/20 px-3 py-2 text-xs text-red-200">Delete</button></div></td></tr>
               ))}
               {!loading && teamLeads.length === 0 && <tr><td colSpan={5} className="p-12 text-center text-white/40">No Team Leads created yet.</td></tr>}
             </tbody>
           </table>
         </div>
       </div>
+      {passwordTarget && (
+        <PasswordDialog
+          title={`Reset password for ${passwordTarget.name || passwordTarget.registrationNumber}`}
+          onCancel={() => setPasswordTarget(null)}
+          onSubmit={(password) => resetPassword(passwordTarget, password)}
+        />
+      )}
     </main>
   );
 }
