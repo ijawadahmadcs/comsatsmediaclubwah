@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 
 type Application = {
@@ -11,6 +12,7 @@ type Application = {
   contactNumber: string;
   email: string;
   areaOfInterest: string;
+  image?: string;
   motivation: string;
   expectations?: string;
   status?: string;
@@ -19,83 +21,101 @@ type Application = {
   updatedAt?: string;
 };
 
+type ApplicationsPage = {
+  query: string;
+  applications: Application[];
+  total: number;
+  filterOptions: { semesters: string[]; interests: string[]; departments: string[] };
+};
+
+type Filters = {
+  search: string;
+  status: string;
+  department: string;
+  semester: string;
+  areaOfInterest: string;
+  paymentStatus: string;
+};
+
 const statuses = ["All", "Pending", "Reviewed", "Accepted", "Rejected"];
 const paymentStatuses = ["Unpaid", "Paid"];
+const PAGE_SIZE = 25;
+const defaultFilters: Filters = { search: "", status: "All", department: "All", semester: "All", areaOfInterest: "All", paymentStatus: "All" };
 
 export default function ApplicationsPage() {
-  const [applications, setApplications] = useState<Application[]>([]);
+  const [data, setData] = useState<ApplicationsPage | null>(null);
   const [selected, setSelected] = useState<Application | null>(null);
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("All");
-  const [department, setDepartment] = useState("All");
-  const [semester, setSemester] = useState("All");
-  const [interest, setInterest] = useState("All");
-  const [paymentStatus, setPaymentStatus] = useState("All");
+  const [filters, setFilters] = useState<Filters>(defaultFilters);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [reloadKey, setReloadKey] = useState(0);
   const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [saving, setSaving] = useState(false);
 
-  async function loadApplications() {
-    const response = await fetch("/api/applications");
-    const result = await response.json();
-    if (!response.ok)
-      throw new Error(result.message || "Unable to load applications.");
-    setApplications(result.applications);
-  }
-
   useEffect(() => {
-    loadApplications()
-      .catch((error) =>
-        setMessage(
-          error instanceof Error
-            ? error.message
-            : "Unable to load applications.",
-        ),
-      )
-      .finally(() => setLoading(false));
-  }, []);
+    const timer = window.setTimeout(() => setDebouncedSearch(filters.search.trim()), 300);
+    return () => window.clearTimeout(timer);
+  }, [filters.search]);
 
-  const options = useMemo(
-    () => ({
-      departments: [
-        "All",
-        ...new Set(applications.map((item) => item.department)),
-      ],
-      semesters: ["All", ...new Set(applications.map((item) => item.semester))],
-      interests: [
-        "All",
-        ...new Set(applications.map((item) => item.areaOfInterest)),
-      ],
-    }),
-    [applications],
+  // Filtering and paging happen on the server, so the page never downloads every application.
+  const query = useMemo(
+    () =>
+      new URLSearchParams({
+        page: String(page),
+        pageSize: String(PAGE_SIZE),
+        search: debouncedSearch,
+        status: filters.status,
+        department: filters.department,
+        semester: filters.semester,
+        areaOfInterest: filters.areaOfInterest,
+        paymentStatus: filters.paymentStatus,
+      }).toString(),
+    [page, debouncedSearch, filters.status, filters.department, filters.semester, filters.areaOfInterest, filters.paymentStatus],
   );
 
-  const filtered = applications.filter((item) => {
-    const haystack = [
-      item.fullName,
-      item.registrationNumber,
-      item.email,
-      item.department,
-      item.areaOfInterest,
-    ]
-      .join(" ")
-      .toLowerCase();
-    return (
-      (!search || haystack.includes(search.toLowerCase())) &&
-      (status === "All" || (item.status || "Pending") === status) &&
-      (department === "All" || item.department === department) &&
-      (semester === "All" || item.semester === semester) &&
-      (interest === "All" || item.areaOfInterest === interest) &&
-      (paymentStatus === "All" ||
-        (item.paymentStatus || "Unpaid") === paymentStatus)
-    );
-  });
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/applications?${query}`)
+      .then(async (response) => {
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || "Unable to load applications.");
+        if (!cancelled) {
+          setData({ ...result, query });
+          setLoadError("");
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) setLoadError(error instanceof Error ? error.message : "Unable to load applications.");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [query, reloadKey]);
+
+  const applications = data?.applications ?? [];
+  const totalPages = data ? Math.max(1, Math.ceil(data.total / PAGE_SIZE)) : 1;
+  const isUpdating = Boolean(data) && data?.query !== query;
+
+  function updateFilter(key: keyof Filters, value: string) {
+    setFilters((current) => ({ ...current, [key]: value }));
+    setPage(1);
+  }
 
   async function updateApplication(changes: {
     status?: string;
     paymentStatus?: string;
   }) {
     if (!selected) return;
+    if (
+      changes.status &&
+      (selected.status || "Pending") === "Accepted" &&
+      changes.status !== "Accepted" &&
+      !window.confirm(
+        `Changing the status from Accepted hides ${selected.fullName} from the public team page and from Team Lead rosters. Continue?`,
+      )
+    )
+      return;
     setSaving(true);
     try {
       const response = await fetch(`/api/applications/${selected._id}`, {
@@ -107,11 +127,13 @@ export default function ApplicationsPage() {
       if (!response.ok)
         throw new Error(result.message || "Unable to update application.");
       const updated = result.application as Application;
-      setApplications((items) =>
-        items.map((item) => (item._id === updated._id ? updated : item)),
+      setData((current) =>
+        current
+          ? { ...current, applications: current.applications.map((item) => (item._id === updated._id ? updated : item)) }
+          : current,
       );
       setSelected(updated);
-      setMessage("Application updated.");
+      setMessage(result.warning || "Application updated.");
     } catch (error) {
       setMessage(
         error instanceof Error
@@ -127,7 +149,7 @@ export default function ApplicationsPage() {
     if (
       !selected ||
       !window.confirm(
-        `Delete ${selected.fullName}'s application? This also removes their linked team record.`,
+        `Delete ${selected.fullName}'s application? If they were accepted, their team record is removed too.`,
       )
     )
       return;
@@ -139,11 +161,9 @@ export default function ApplicationsPage() {
       const result = await response.json();
       if (!response.ok)
         throw new Error(result.message || "Unable to delete application.");
-      setApplications((items) =>
-        items.filter((item) => item._id !== selected._id),
-      );
       setSelected(null);
-      setMessage("Application deleted.");
+      setMessage(result.message || "Application deleted.");
+      setReloadKey((key) => key + 1);
     } catch (error) {
       setMessage(
         error instanceof Error
@@ -155,17 +175,17 @@ export default function ApplicationsPage() {
     }
   }
 
-  function exportApplications(format: string) {
+  function exportUrl(format: string) {
     const params = new URLSearchParams({
       format,
-      search,
-      status,
-      department,
-      semester,
-      areaOfInterest: interest,
-      paymentStatus,
+      search: filters.search.trim(),
+      status: filters.status,
+      department: filters.department,
+      semester: filters.semester,
+      areaOfInterest: filters.areaOfInterest,
+      paymentStatus: filters.paymentStatus,
     });
-    window.location.href = `/api/applications/export?${params}`;
+    return `/api/applications/export?${params}`;
   }
 
   return (
@@ -183,15 +203,16 @@ export default function ApplicationsPage() {
 
         <div className="mt-8 flex flex-wrap gap-3">
           <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            value={filters.search}
+            onChange={(event) => updateFilter("search", event.target.value)}
+            maxLength={100}
             placeholder="Search applications..."
             className="min-w-64 flex-1 rounded-xl border border-white/10 bg-[#0b0d10] px-4 py-3 text-sm outline-none focus:border-blue-300/50"
           />
           <select
             aria-label="Status"
-            value={status}
-            onChange={(event) => setStatus(event.target.value)}
+            value={filters.status}
+            onChange={(event) => updateFilter("status", event.target.value)}
             className="rounded-xl border border-white/10 bg-[#0b0d10] px-3 py-3 text-sm text-white/70"
           >
             {statuses.map((option) => (
@@ -200,38 +221,38 @@ export default function ApplicationsPage() {
           </select>
           {/* <select
             aria-label="Department"
-            value={department}
-            onChange={(event) => setDepartment(event.target.value)}
+            value={filters.department}
+            onChange={(event) => updateFilter("department", event.target.value)}
             className="rounded-xl border border-white/10 bg-[#0b0d10] px-3 py-3 text-sm text-white/70"
           >
-            {options.departments.map((option) => (
+            {["All", ...(data?.filterOptions.departments ?? [])].map((option) => (
               <option key={option}>{option}</option>
             ))}
           </select> */}
           <select
             aria-label="Semester"
-            value={semester}
-            onChange={(event) => setSemester(event.target.value)}
+            value={filters.semester}
+            onChange={(event) => updateFilter("semester", event.target.value)}
             className="rounded-xl border border-white/10 bg-[#0b0d10] px-3 py-3 text-sm text-white/70"
           >
-            {options.semesters.map((option) => (
+            {["All", ...(data?.filterOptions.semesters ?? [])].map((option) => (
               <option key={option}>{option}</option>
             ))}
           </select>
           <select
             aria-label="Interest"
-            value={interest}
-            onChange={(event) => setInterest(event.target.value)}
+            value={filters.areaOfInterest}
+            onChange={(event) => updateFilter("areaOfInterest", event.target.value)}
             className="rounded-xl border border-white/10 bg-[#0b0d10] px-3 py-3 text-sm text-white/70"
           >
-            {options.interests.map((option) => (
+            {["All", ...(data?.filterOptions.interests ?? [])].map((option) => (
               <option key={option}>{option}</option>
             ))}
           </select>
           <select
             aria-label="Registration fee"
-            value={paymentStatus}
-            onChange={(event) => setPaymentStatus(event.target.value)}
+            value={filters.paymentStatus}
+            onChange={(event) => updateFilter("paymentStatus", event.target.value)}
             className="rounded-xl border border-white/10 bg-[#0b0d10] px-3 py-3 text-sm text-white/70"
           >
             <option>All</option>
@@ -241,87 +262,110 @@ export default function ApplicationsPage() {
           </select>
           <button
             onClick={() => {
-              setSearch("");
-              setStatus("All");
-              setDepartment("All");
-              setSemester("All");
-              setInterest("All");
-              setPaymentStatus("All");
+              setFilters(defaultFilters);
+              setPage(1);
             }}
             className="rounded-xl border border-white/10 px-4 py-3 text-sm text-white/60"
           >
             Clear Filters
           </button>
-          <button
-            onClick={() => exportApplications("csv")}
+          <a
+            href={exportUrl("csv")}
             className="rounded-xl bg-white px-4 py-3 text-sm font-medium text-black"
           >
             Export CSV
-          </button>
-          <button
-            onClick={() => exportApplications("xlsx")}
+          </a>
+          <a
+            href={exportUrl("xlsx")}
             className="rounded-xl border border-white/15 px-4 py-3 text-sm text-white/75"
           >
             Export Excel
-          </button>
+          </a>
         </div>
 
         {message && <p className="mt-5 text-sm text-blue-200">{message}</p>}
-        {loading ? (
+        {loadError && <p className="mt-5 text-sm text-red-200">{loadError}</p>}
+        {!data ? (
           <p className="py-20 text-center text-sm text-white/40">
-            Loading applications...
+            {loadError ? "" : "Loading applications..."}
           </p>
         ) : (
-          <div className="mt-8 overflow-x-auto rounded-2xl border border-white/10 bg-[#0b0d10]">
-            <table className="w-full min-w-[980px] text-left text-sm">
-              <thead className="border-b border-white/10 text-xs uppercase tracking-[0.15em] text-white/30">
-                <tr>
-                  <th className="p-4">Applicant</th>
-                  <th className="p-4">Registration</th>
-                  <th className="p-4">Department</th>
-                  <th className="p-4">Interest</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4">Fee</th>
-                  <th className="p-4">Submitted</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((item) => (
-                  <tr
-                    key={item._id}
-                    onClick={() => setSelected(item)}
-                    className="cursor-pointer border-b border-white/[0.06] transition hover:bg-white/[0.04]"
-                  >
-                    <td className="p-4 text-white/85">
-                      {item.fullName}
-                      <span className="mt-1 block text-xs text-white/35">
-                        {item.email}
-                      </span>
-                    </td>
-                    <td className="p-4 text-white/55">
-                      {item.registrationNumber}
-                    </td>
-                    <td className="p-4 text-white/55">{item.department}</td>
-                    <td className="p-4 text-white/55">{item.areaOfInterest}</td>
-                    <td className="p-4 text-white/55">
-                      {item.status || "Pending"}
-                    </td>
-                    <td className="p-4 text-white/55">
-                      {item.paymentStatus || "Unpaid"}
-                    </td>
-                    <td className="p-4 text-white/40">
-                      {new Date(item.createdAt).toLocaleDateString()}
-                    </td>
+          <>
+            <div className={`mt-8 overflow-x-auto rounded-2xl border border-white/10 bg-[#0b0d10] transition-opacity ${isUpdating ? "opacity-60" : ""}`}>
+              <table className="w-full min-w-[980px] text-left text-sm">
+                <thead className="border-b border-white/10 text-xs uppercase tracking-[0.15em] text-white/30">
+                  <tr>
+                    <th className="p-4">Applicant</th>
+                    <th className="p-4">Registration</th>
+                    <th className="p-4">Department</th>
+                    <th className="p-4">Interest</th>
+                    <th className="p-4">Status</th>
+                    <th className="p-4">Fee</th>
+                    <th className="p-4">Submitted</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-            {!filtered.length && (
-              <p className="py-16 text-center text-sm text-white/40">
-                No applications match these filters.
-              </p>
-            )}
-          </div>
+                </thead>
+                <tbody>
+                  {applications.map((item) => (
+                    <tr
+                      key={item._id}
+                      onClick={() => setSelected(item)}
+                      className="cursor-pointer border-b border-white/[0.06] transition hover:bg-white/[0.04]"
+                    >
+                      <td className="p-4 text-white/85">
+                        {item.fullName}
+                        <span className="mt-1 block text-xs text-white/35">
+                          {item.email}
+                        </span>
+                      </td>
+                      <td className="p-4 text-white/55">
+                        {item.registrationNumber}
+                      </td>
+                      <td className="p-4 text-white/55">{item.department}</td>
+                      <td className="p-4 text-white/55">{item.areaOfInterest}</td>
+                      <td className="p-4 text-white/55">
+                        {item.status || "Pending"}
+                      </td>
+                      <td className="p-4 text-white/55">
+                        {item.paymentStatus || "Unpaid"}
+                      </td>
+                      <td className="p-4 text-white/40">
+                        {new Date(item.createdAt).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {!applications.length && (
+                <p className="py-16 text-center text-sm text-white/40">
+                  No applications match these filters.
+                </p>
+              )}
+            </div>
+            <div className="mt-5 flex items-center justify-between text-sm text-white/45">
+              <span>{data.total} application{data.total === 1 ? "" : "s"}</span>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  disabled={page <= 1}
+                  onClick={() => setPage((current) => current - 1)}
+                  className="rounded-lg border border-white/10 px-3 py-2 disabled:opacity-40"
+                >
+                  Previous
+                </button>
+                <span>
+                  Page {page} of {totalPages}
+                </span>
+                <button
+                  type="button"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage((current) => current + 1)}
+                  className="rounded-lg border border-white/10 px-3 py-2 disabled:opacity-40"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </>
         )}
       </div>
 
@@ -329,13 +373,24 @@ export default function ApplicationsPage() {
         <div className="fixed inset-0 z-[60] overflow-y-auto bg-black/75 px-4 py-8 backdrop-blur-sm">
           <div className="mx-auto max-w-2xl rounded-2xl border border-white/10 bg-[#111419] p-6 sm:p-8">
             <div className="flex justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-blue-300/60">
-                  Application details
-                </p>
-                <h2 className="mt-2 text-2xl font-semibold">
-                  {selected.fullName}
-                </h2>
+              <div className="flex items-center gap-4">
+                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-white/[0.05]">
+                  {selected.image ? (
+                    <Image src={selected.image} alt={`Photo submitted by ${selected.fullName}`} fill sizes="64px" unoptimized className="object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-lg text-white/35">
+                      {selected.fullName.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-blue-300/60">
+                    Application details
+                  </p>
+                  <h2 className="mt-2 text-2xl font-semibold">
+                    {selected.fullName}
+                  </h2>
+                </div>
               </div>
               <button
                 onClick={() => setSelected(null)}
@@ -344,6 +399,14 @@ export default function ApplicationsPage() {
                 Close
               </button>
             </div>
+            {selected.image && (
+              <p className="mt-3 text-xs text-white/35">
+                Accepting this application publishes this photo on the Team page.{" "}
+                <a href={selected.image} target="_blank" rel="noreferrer" className="underline underline-offset-4">
+                  View full size
+                </a>
+              </p>
+            )}
             <div className="mt-7 grid gap-5 sm:grid-cols-2">
               {[
                 ["Registration", selected.registrationNumber],

@@ -2,6 +2,7 @@ import Application from "@/models/Application";
 import TeamMember from "@/models/TeamMember";
 import { getTeamScope } from "@/lib/teamScope";
 
+/** Ids of the team members a Team Lead may assign: members of accepted applications in the lead's team. */
 export async function getApprovedTeamMemberIds(team: string) {
   const applications = await Application.find({
     status: "Accepted",
@@ -12,12 +13,11 @@ export async function getApprovedTeamMemberIds(team: string) {
 
   if (!applications.length) return [];
 
-  const applicationIds = applications.map((application) => application._id);
-  const registrationNumbers = applications.map((application) => application.registrationNumber);
   const members = await TeamMember.find({
     $or: [
-      { applicationId: { $in: applicationIds } },
-      { registrationNumber: { $in: registrationNumbers } },
+      { applicationId: { $in: applications.map((application) => application._id) } },
+      // Older members were matched to their application by registration number only.
+      { applicationId: null, registrationNumber: { $in: applications.map((application) => application.registrationNumber) } },
     ],
   })
     .select("_id")

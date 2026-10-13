@@ -1,17 +1,31 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useState } from "react";
-import { motion } from "framer-motion";
-import { ArrowDown, ArrowRight, Check } from "lucide-react";
+import { ChangeEvent, FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image";
+import { ArrowRight } from "lucide-react";
+import TurnstileWidget from "@/components/TurnstileWidget";
+import {
+  APPLICATION_FIELD_LIMITS as LIMITS,
+  APPLICATION_IMAGE_MAX_BYTES,
+  APPLICATION_IMAGE_TYPES,
+  APPLICATION_INTERESTS,
+} from "@/lib/applicationRules";
+import { resizeImageFile } from "@/lib/resizeImage";
 
-const interests = [
-  "Photography",
-  "Videography",
-  "Graphic Design",
-  "Video Editing",
-  "Content Creation",
-  "Digital Storytelling"
-];
+const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+// Photos are shrunk in the browser before upload, so larger originals are fine here.
+const MAX_ORIGINAL_IMAGE_BYTES = 15 * 1024 * 1024;
+const FORM_FIELDS = [
+  "fullName",
+  "registrationNumber",
+  "department",
+  "semester",
+  "contactNumber",
+  "email",
+  "areaOfInterest",
+  "motivation",
+  "expectations",
+] as const;
 
 export default function JoinPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -21,86 +35,96 @@ export default function JoinPage() {
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const handleTurnstileToken = useCallback((token: string) => setTurnstileToken(token), []);
 
-  function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
+  // Release the previous preview URL whenever it changes, and on unmount.
+  useEffect(() => {
+    return () => {
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+    };
+  }, [imagePreview]);
+
+  function clearImage() {
+    setImageFile(null);
+    setImagePreview("");
+    if (imageInputRef.current) imageInputRef.current.value = "";
+  }
+
+  function rejectImage(text: string) {
+    clearImage();
+    setFormMessage({ type: "error", text });
+  }
+
+  async function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    if (!file) return;
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      setFormMessage({ type: "error", text: "Please choose a JPEG, PNG, or WEBP image." });
+    if (!file) {
+      clearImage();
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setFormMessage({ type: "error", text: "The image must be 5 MB or smaller." });
+    if (!(APPLICATION_IMAGE_TYPES as readonly string[]).includes(file.type)) {
+      rejectImage("Please choose a JPEG, PNG, or WEBP image.");
       return;
     }
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
-    setFormMessage({ type: "", text: "" });
+    if (file.size > MAX_ORIGINAL_IMAGE_BYTES) {
+      rejectImage("The image must be 15 MB or smaller.");
+      return;
+    }
+    setIsProcessingImage(true);
+    try {
+      const resized = await resizeImageFile(file);
+      if (resized.size > APPLICATION_IMAGE_MAX_BYTES) {
+        rejectImage("This image is too large to upload. Please choose a smaller one.");
+        return;
+      }
+      setImageFile(resized);
+      setImagePreview(URL.createObjectURL(resized));
+      setFormMessage({ type: "", text: "" });
+    } finally {
+      setIsProcessingImage(false);
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (isSubmitting) {
+    if (isSubmitting || isProcessingImage) {
+      return;
+    }
+    if (turnstileSiteKey && !turnstileToken) {
+      setFormMessage({ type: "error", text: "Please complete the security check." });
       return;
     }
 
     const form = event.currentTarget;
-    const formData = new FormData(form);
-    const values = Object.fromEntries(formData.entries());
-    const payload = Object.fromEntries(
-      Object.entries({
-        fullName: values.name,
-        registrationNumber: values.registrationNumber,
-        department: values.department,
-        semester: values.semester,
-        contactNumber: values.phone,
-        email: values.email,
-        areaOfInterest: values.interest,
-        motivation: values.motivation,
-        expectations: values.expectations,
-      }).map(([key, value]) => [
-        key,
-        typeof value === "string" ? value.trim() : value,
-      ]),
-    );
+    const source = new FormData(form);
+    const payload = new FormData();
+    for (const field of FORM_FIELDS) {
+      const value = source.get(field);
+      payload.set(field, typeof value === "string" ? value.trim() : "");
+    }
+    if (imageFile) payload.set("image", imageFile);
+    if (turnstileToken) payload.set("turnstileToken", turnstileToken);
 
     setIsSubmitting(true);
     setFormMessage({ type: "", text: "" });
 
     try {
-      let image = "";
-      if (imageFile) {
-        const uploadData = new FormData();
-        uploadData.append("file", imageFile);
-        const uploadResponse = await fetch("/api/applications/upload", {
-          method: "POST",
-          body: uploadData,
-        });
-        const uploadResult = await uploadResponse.json();
-        if (!uploadResponse.ok || !uploadResult.success) {
-          throw new Error(uploadResult.message || "Unable to upload image.");
-        }
-        image = uploadResult.image;
-      }
-
-      payload.image = image;
       const response = await fetch("/api/applications", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+        body: payload,
       });
-      const result = await response.json();
+      const result = await response.json().catch(() => ({}));
 
       if (!response.ok || !result.success) {
         throw new Error(result.message || "Unable to submit application.");
       }
 
       form.reset();
-      setImageFile(null);
-      setImagePreview("");
+      clearImage();
       setFormMessage({ type: "success", text: result.message });
     } catch (error) {
       setFormMessage({
@@ -111,6 +135,8 @@ export default function JoinPage() {
       });
     } finally {
       setIsSubmitting(false);
+      // Each CAPTCHA token can only be verified once.
+      if (turnstileSiteKey) setTurnstileResetKey((key) => key + 1);
     }
   }
 
@@ -163,9 +189,11 @@ export default function JoinPage() {
 
                   <input
                     type="text"
-                    name="name"
+                    name="fullName"
                     placeholder="Enter your full name"
                     required
+                    maxLength={LIMITS.fullName}
+                    autoComplete="name"
                     className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4 text-sm text-white outline-none transition placeholder:text-white/20 focus:border-white/30"
                   />
                 </div>
@@ -182,6 +210,7 @@ export default function JoinPage() {
                     name="registrationNumber"
                     placeholder="e.g. FA23-BCS-001"
                     required
+                    maxLength={LIMITS.registrationNumber}
                     className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4 text-sm text-white outline-none transition placeholder:text-white/20 focus:border-white/30"
                   />
                 </div>
@@ -198,6 +227,7 @@ export default function JoinPage() {
                     name="department"
                     placeholder="e.g. Computer Science"
                     required
+                    maxLength={LIMITS.department}
                     className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4 text-sm text-white outline-none transition placeholder:text-white/20 focus:border-white/30"
                   />
                 </div>
@@ -246,9 +276,11 @@ export default function JoinPage() {
 
                   <input
                     type="tel"
-                    name="phone"
+                    name="contactNumber"
                     placeholder="03XX-XXXXXXX"
                     required
+                    maxLength={LIMITS.contactNumber}
+                    autoComplete="tel"
                     className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4 text-sm text-white outline-none transition placeholder:text-white/20 focus:border-white/30"
                   />
                 </div>
@@ -264,6 +296,8 @@ export default function JoinPage() {
                     name="email"
                     placeholder="yourname@example.com"
                     required
+                    maxLength={LIMITS.email}
+                    autoComplete="email"
                     className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4 text-sm text-white outline-none transition placeholder:text-white/20 focus:border-white/30"
                   />
                 </div>
@@ -281,11 +315,11 @@ export default function JoinPage() {
               <div className="max-w-xl">
 
                 <label className="mb-2 block text-sm text-white/55">
-                  Area you're interested in
+                  Area you&apos;re interested in
                 </label>
 
                 <select
-                  name="interest"
+                  name="areaOfInterest"
                   required
                   defaultValue=""
                   className="w-full appearance-none rounded-xl border border-white/10 bg-[#101216] px-5 py-4 text-sm text-white/60 outline-none transition focus:border-white/30"
@@ -294,7 +328,7 @@ export default function JoinPage() {
                     Select your area of interest
                   </option>
 
-                  {interests.map((interest) => (
+                  {APPLICATION_INTERESTS.map((interest) => (
                     <option key={interest} value={interest}>
                       {interest}
                     </option>
@@ -305,7 +339,7 @@ export default function JoinPage() {
             </div>
 
 
-            {/* MOTIVATION */}
+            {/* PROFILE IMAGE */}
             <div>
               <p className="mb-5 text-xs uppercase tracking-[0.25em] text-white/30">
                 Profile Image
@@ -315,21 +349,24 @@ export default function JoinPage() {
                   Upload a profile image (optional)
                 </span>
                 <input
+                  ref={imageInputRef}
                   type="file"
-                  name="image"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={handleImageChange}
+                  accept={APPLICATION_IMAGE_TYPES.join(",")}
+                  onChange={(event) => void handleImageChange(event)}
                   className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4 text-sm text-white/60 file:mr-4 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:text-sm file:text-black"
                 />
                 {imagePreview && (
-                  <img
+                  <Image
                     src={imagePreview}
                     alt="Selected profile preview"
+                    width={96}
+                    height={96}
+                    unoptimized
                     className="mt-4 h-24 w-24 rounded-xl border border-white/10 object-cover"
                   />
                 )}
                 <p className="mt-2 text-xs text-white/30">
-                  JPEG, PNG, or WEBP up to 5 MB.
+                  {isProcessingImage ? "Preparing your photo..." : "JPEG, PNG, or WEBP. Large photos are resized automatically."}
                 </p>
               </label>
             </div>
@@ -351,6 +388,7 @@ export default function JoinPage() {
                     name="motivation"
                     rows={5}
                     required
+                    maxLength={LIMITS.motivation}
                     placeholder="Tell us what motivates you to join..."
                     className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4 text-sm leading-7 text-white outline-none transition placeholder:text-white/20 focus:border-white/30"
                   />
@@ -365,6 +403,7 @@ export default function JoinPage() {
                   <textarea
                     name="expectations"
                     rows={5}
+                    maxLength={LIMITS.expectations}
                     placeholder="Tell us what you'd like to learn, experience, or contribute..."
                     className="w-full resize-none rounded-xl border border-white/10 bg-white/[0.03] px-5 py-4 text-sm leading-7 text-white outline-none transition placeholder:text-white/20 focus:border-white/30"
                   />
@@ -383,6 +422,12 @@ export default function JoinPage() {
                 part of the COMSATS Media Club.
               </p>
 
+              {turnstileSiteKey && (
+                <div className="mb-6">
+                  <TurnstileWidget siteKey={turnstileSiteKey} onToken={handleTurnstileToken} resetKey={turnstileResetKey} />
+                </div>
+              )}
+
               {formMessage.text && (
                 <p
                   role="status"
@@ -394,7 +439,7 @@ export default function JoinPage() {
 
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isProcessingImage}
                 className="group inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-medium text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSubmitting ? "Submitting..." : "Submit Application"}
@@ -421,7 +466,7 @@ export default function JoinPage() {
           </p>
 
           <h2 className="mt-6 max-w-5xl text-4xl font-semibold leading-[0.95] tracking-tight sm:text-6xl lg:text-7xl">
-            You don't need
+            You don&apos;t need
             <br />
             <span className="text-white/30">
               to know everything.
@@ -446,7 +491,7 @@ export default function JoinPage() {
               </p>
 
               <p className="mt-3 text-sm leading-7 text-white/35">
-                Your ideas matter, whether they're behind a camera or
+                Your ideas matter, whether they&apos;re behind a camera or
                 outside the box.
               </p>
             </div>

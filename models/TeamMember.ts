@@ -1,6 +1,28 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, Types, type Model } from "mongoose";
 
-const teamMemberSchema = new Schema(
+export interface ITeamMember {
+  name: string;
+  role: string;
+  team?: string;
+  department?: string;
+  registrationNumber?: string;
+  // Set for members created from an application. Such members are only shown publicly
+  // while their application is Accepted (see lib/teamMembers.ts).
+  applicationId?: Types.ObjectId;
+  contactNumber?: string;
+  semester?: number;
+  areaOfInterest?: string;
+  bio?: string;
+  image?: string;
+  instagram?: string;
+  facebook?: string;
+  linkedin?: string;
+  order: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const teamMemberSchema = new Schema<ITeamMember>(
   {
     name: { type: String, required: true, trim: true },
     role: { type: String, required: true, trim: true },
@@ -27,6 +49,7 @@ const teamMemberSchema = new Schema(
 );
 
 const TeamMember =
-  mongoose.models.TeamMember || mongoose.model("TeamMember", teamMemberSchema);
+  (mongoose.models.TeamMember as Model<ITeamMember> | undefined) ??
+  mongoose.model<ITeamMember>("TeamMember", teamMemberSchema);
 
 export default TeamMember;
