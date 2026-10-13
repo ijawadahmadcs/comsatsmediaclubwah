@@ -115,9 +115,9 @@ export default function EventDetail() {
     }
   }
 
-  if (loading) return <main className="mt-20 min-h-screen bg-[#08090b] px-4 py-12 text-white sm:px-8"><div className="mx-auto max-w-5xl animate-pulse"><div className="h-5 w-32 rounded bg-white/10" /><div className="mt-8 h-12 w-2/3 rounded bg-white/10" /><div className="mt-4 h-5 w-1/2 rounded bg-white/10" /><div className="mt-10 h-72 rounded-2xl bg-white/[0.05]" /></div></main>;
+  if (loading) return <main className="min-h-screen bg-[#08090b] px-4 py-12 text-white sm:px-8"><div className="mx-auto max-w-5xl animate-pulse"><div className="h-5 w-32 rounded bg-white/10" /><div className="mt-8 h-12 w-2/3 rounded bg-white/10" /><div className="mt-4 h-5 w-1/2 rounded bg-white/10" /><div className="mt-10 h-72 rounded-2xl bg-white/[0.05]" /></div></main>;
 
-  if (error && !event) return <main className="mt-20 min-h-screen bg-[#08090b] px-4 py-12 text-white sm:px-8"><div className="mx-auto max-w-5xl rounded-2xl border border-red-300/20 bg-red-300/10 p-6 text-red-100"><p>{error}</p><button type="button" onClick={() => void loadEvent()} className="mt-4 underline underline-offset-4">Try again</button></div></main>;
+  if (error && !event) return <main className="min-h-screen bg-[#08090b] px-4 py-12 text-white sm:px-8"><div className="mx-auto max-w-5xl rounded-2xl border border-red-300/20 bg-red-300/10 p-6 text-red-100"><p>{error}</p><button type="button" onClick={() => void loadEvent()} className="mt-4 underline underline-offset-4">Try again</button></div></main>;
   if (!event) return null;
 
   const attendanceCount = attendanceSet.size;
@@ -125,7 +125,7 @@ export default function EventDetail() {
   const attendancePercent = totalMembers ? Math.round((attendanceCount / totalMembers) * 100) : 0;
 
   return (
-    <main className="mt-20 min-h-screen bg-[#08090b] px-4 py-10 text-white sm:px-8 lg:px-12">
+    <main className="min-h-screen bg-[#08090b] px-4 py-10 text-white sm:px-8 lg:px-12">
       <div className="mx-auto max-w-6xl">
         <Link href="/team-lead/events" className="inline-flex items-center gap-2 text-sm text-white/45 transition hover:text-white"><ArrowLeft size={16} /> Back to events</Link>
 

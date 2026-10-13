@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -96,11 +97,13 @@ export default function AboutPage() {
       <section className="relative min-h-[85vh] overflow-hidden rounded-[2rem] border border-white/10">
 
         {/* Background */}
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage: "url('/about-hero.jpeg')",
-          }}
+        <Image
+          src="/about-hero.jpeg"
+          alt=""
+          fill
+          preload
+          sizes="100vw"
+          className="object-cover object-center"
         />
 
         {/* Dark cinematic overlay */}
@@ -145,7 +148,7 @@ export default function AboutPage() {
               transition={{ duration: 0.7, delay: 0.25 }}
               className="mt-7 max-w-2xl text-base leading-relaxed text-white/65 sm:text-lg"
             >
-              We don't just represent a society.
+              We don&apos;t just represent a society.
               We represent COMSATS as a whole - its people,
               its achievements, its creativity, and its stories.
             </motion.p>
@@ -296,7 +299,7 @@ export default function AboutPage() {
             <div>
 
               <p className="text-xs uppercase tracking-[0.3em] text-white/40">
-                03 - Our Purpose
+                Our Purpose
               </p>
 
               <h2 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -381,10 +384,10 @@ export default function AboutPage() {
               </p>
 
               <Link
-                href="/about"
+                href="/work"
                 className="group mt-8 inline-flex items-center gap-2 text-sm text-white/70 transition hover:text-white"
               >
-                Discover the Club
+                Explore our work
                 <ArrowRight
                   size={15}
                   className="transition-transform group-hover:translate-x-1"
@@ -423,8 +426,8 @@ export default function AboutPage() {
               </p>
 
               <p className="mt-6 text-base leading-8 text-white/40">
-                You don't need to be an expert. Whether you're already
-                experienced or simply curious about media, there's room
+                You don&apos;t need to be an expert. Whether you&apos;re already
+                experienced or simply curious about media, there&apos;s room
                 for you to learn and contribute.
               </p>
 

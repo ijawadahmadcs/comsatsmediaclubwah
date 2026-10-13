@@ -164,7 +164,7 @@ export default function TeamLeadEvents() {
   }
 
   return (
-    <main className="mt-20 min-h-screen bg-[#08090b] px-4 py-10 text-white sm:px-8 lg:px-12">
+    <main className="min-h-screen bg-[#08090b] px-4 py-10 text-white sm:px-8 lg:px-12">
       <div className="mx-auto max-w-7xl">
         <header className="flex flex-col gap-5 border-b border-white/10 pb-8 sm:flex-row sm:items-end sm:justify-between">
           <div>

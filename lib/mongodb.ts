@@ -30,13 +30,12 @@ const cached = globalWithMongoose.mongoose ?? {
 
 globalWithMongoose.mongoose = cached;
 
+// The connection is opened once per process. If it drops later, the MongoDB driver reconnects
+// by itself and queries wait for it (calling connect() again would leak a second client).
+// A failed first attempt clears the cached promise, so the next request tries again.
 export default async function connectToDatabase() {
-  if (cached.conn && mongoose.connection.readyState === 1) {
+  if (cached.conn) {
     return cached.conn;
-  }
-
-  if (cached.conn && mongoose.connection.readyState !== 1) {
-    cached.conn = null;
   }
 
   if (!cached.promise) {

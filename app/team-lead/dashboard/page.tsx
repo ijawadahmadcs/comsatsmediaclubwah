@@ -82,7 +82,7 @@ export default function TeamLeadDashboard() {
   const rating = Math.min(Math.max(data?.avgRating ?? 0, 0), 5);
 
   return (
-    <main className="min-h-screen bg-black px-4 py-10 text-white sm:px-8 lg:px-12 mt-20">
+    <main className="min-h-screen bg-black px-4 py-10 text-white sm:px-8 lg:px-12">
       <div className="mx-auto max-w-7xl">
         <header className="relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#10161a] p-6 sm:p-8">
           <div className="pointer-events-none absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(255,255,255,.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.05)_1px,transparent_1px)] [background-size:32px_32px]" />

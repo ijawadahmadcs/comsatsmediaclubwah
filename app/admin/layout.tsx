@@ -184,7 +184,7 @@ export default function AdminLayout({
       <div className="lg:pl-72">
         <button
           onClick={() => setOpen(true)}
-          className="fixed left-3 top-25 z-30 rounded-lg border border-white/10 bg-[#0b0d10] p-2 text-white shadow-lg lg:hidden"
+          className="fixed left-3 top-3 z-30 rounded-lg border border-white/10 bg-[#0b0d10] p-2 text-white shadow-lg lg:hidden"
           aria-label="Open menu"
         >
           <Menu size={19} />

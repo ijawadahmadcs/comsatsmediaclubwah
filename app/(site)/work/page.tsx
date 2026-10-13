@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Maximize2, X } from "lucide-react";
 
@@ -41,20 +42,22 @@ export default function WorkPage() {
       .catch(() => undefined);
   }, []);
 
-  function closeLightbox() {
-    setSelectedIndex(null);
-  }
+  // The gallery grows when uploaded media loads, so the navigation handlers track its length.
+  const galleryLength = gallery.length;
+  const isLightboxOpen = selectedIndex !== null;
 
-  function showPrevious() {
-    setSelectedIndex((current) => current === null ? null : (current - 1 + gallery.length) % gallery.length);
-  }
+  const closeLightbox = useCallback(() => setSelectedIndex(null), []);
 
-  function showNext() {
-    setSelectedIndex((current) => current === null ? null : (current + 1) % gallery.length);
-  }
+  const showPrevious = useCallback(() => {
+    setSelectedIndex((current) => current === null ? null : (current - 1 + galleryLength) % galleryLength);
+  }, [galleryLength]);
+
+  const showNext = useCallback(() => {
+    setSelectedIndex((current) => current === null ? null : (current + 1) % galleryLength);
+  }, [galleryLength]);
 
   useEffect(() => {
-    if (selectedIndex === null) return;
+    if (!isLightboxOpen) return;
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") closeLightbox();
@@ -68,7 +71,7 @@ export default function WorkPage() {
       document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = "";
     };
-  }, [selectedIndex]);
+  }, [isLightboxOpen, closeLightbox, showPrevious, showNext]);
 
   return (
     <main className="min-h-screen bg-[#08090b] px-3 py-3 text-white sm:px-5 sm:py-5">
@@ -85,7 +88,7 @@ export default function WorkPage() {
           <div className="columns-1 gap-3 sm:columns-2 lg:columns-3">
             {gallery.map((asset, index) => (
               <motion.button key={asset._id || asset.url} type="button" initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.12 }} transition={{ duration: 0.55, delay: (index % 3) * 0.06 }} onClick={() => setSelectedIndex(index)} className="group relative mb-3 block w-full break-inside-avoid overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] text-left focus:outline-none focus:ring-2 focus:ring-white/60" aria-label={`Open work ${index + 1}`}>
-                {asset.resourceType === "video" ? <video src={asset.url} muted playsInline loop autoPlay className="block h-auto max-h-[70vh] w-full object-cover transition duration-700 ease-out group-hover:scale-[1.04]" /> : <img src={asset.url} alt="COMSATS Media Club work" className="block h-auto w-full transition duration-700 ease-out group-hover:scale-[1.04]" />}
+                {asset.resourceType === "video" ? <video src={asset.url} muted playsInline loop autoPlay className="block h-auto max-h-[70vh] w-full object-cover transition duration-700 ease-out group-hover:scale-[1.04]" /> : <Image src={asset.url} alt="COMSATS Media Club work" width={0} height={0} sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" unoptimized={!asset.url.startsWith("/")} style={{ width: "100%", height: "auto" }} className="block transition duration-700 ease-out group-hover:scale-[1.04]" />}
                 <span className="pointer-events-none absolute inset-0 bg-black/0 transition duration-500 group-hover:bg-black/25" />
                 <span className="absolute bottom-4 right-4 flex h-10 w-10 translate-y-2 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white/75 opacity-0 backdrop-blur-md transition duration-300 group-hover:translate-y-0 group-hover:opacity-100"><Maximize2 size={16} /></span>
               </motion.button>

@@ -300,7 +300,7 @@ export default function TeamManagementPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#08090b] px-3 py-28 text-white sm:px-5">
+    <main className="min-h-screen bg-[#08090b] px-3 py-16 text-white sm:px-5">
       <section className="mx-auto max-w-7xl rounded-[2rem] border border-white/10 bg-[#0b0d10] px-6 py-10 sm:px-10 lg:px-16">
         <div className="flex flex-col justify-between gap-6 border-b border-white/10 pb-8 sm:flex-row sm:items-end">
           <div>
