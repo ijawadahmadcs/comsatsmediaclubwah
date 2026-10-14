@@ -104,10 +104,41 @@ Roles: `superadmin`, `admin` (together: "staff"), and `teamlead` (limited to one
 - Images use `next/image`. Add `unoptimized` for Cloudinary URLs (no remote patterns are configured), and `preload` only on the hero image.
 - Match the surrounding code's style. Keep comments short and explain why, not what.
 
+## Git workflow (always)
+
+Never commit or push to `main` directly. Every change reaches `main` through a pull request.
+
+1. **Start from an up-to-date `main` on a new branch** for each piece of work:
+   ```sh
+   git switch main
+   git pull --ff-only origin main
+   git switch -c fix/event-time-zone-shift
+   ```
+2. **Name the branch after what it is for:** `<type>/<short-description-in-kebab-case>`.
+   - `feat/` new feature, `fix/` bug or security fix, `refactor/` code change with no behaviour change, `docs/` documentation only, `test/` tests only, `chore/` dependencies, tooling or CI.
+   - Good: `fix/security-audit-findings`, `feat/attendance-export`, `docs/deployment-guide`, `chore/upgrade-next-16-4`.
+   - Bad: `update`, `changes`, `new-branch`, `ali-work`, `test2`. A reader must know the purpose from the name alone.
+   - One topic per branch. Put unrelated changes on their own branch and pull request.
+3. **Commit in small, logical steps.**
+   - Subject line: imperative, at most 72 characters, says what changes (`Fix event dates shifting by the time-zone offset`, not `bugs fixed`).
+   - Body: why the change was needed and anything a reviewer should know.
+   - Stage explicit paths (`git add app/api/team lib/teamMembers.ts`), not `git add .`, so local files are never committed by accident.
+   - Never commit `.env*` files (except `.env.example`), secrets, or local reports and notes.
+4. **Run the checks** in "Before you finish" below. Push only when they pass.
+5. **Push the branch and open a pull request** against `main`:
+   ```sh
+   git push -u origin fix/event-time-zone-shift
+   gh pr create --base main --title "Fix event dates shifting by the time-zone offset" --body-file pr.md
+   ```
+   The title says what the pull request does. The description covers:
+   - what changed and why;
+   - how it was tested;
+   - anything a reviewer or deployer must do (new environment variables, data changes, visible UI changes).
+6. **Update the branch, not `main`.** Push follow-up commits to the same branch; the pull request updates itself. If `main` moves on, run `git merge origin/main` on your branch and re-run the checks. Do not force-push a branch someone else is reviewing.
+7. **Merge only when CI passes** and the pull request has been reviewed. Then delete the branch.
+
 ## Before you finish
 
 ```sh
 npm run lint && npm run typecheck && npm test && npm run build
 ```
-
-Never commit `.env*` files (except `.env.example`) or any secret.

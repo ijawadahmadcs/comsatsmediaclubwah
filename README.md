@@ -94,4 +94,4 @@ proxy.ts        portal redirects and cross-site request checks (Next.js middlewa
 tests/          Vitest tests
 ```
 
-Contributors and AI coding agents: read [AGENTS.md](AGENTS.md) for the rules every change must follow.
+Contributors and AI coding agents: read [AGENTS.md](AGENTS.md) for the rules every change must follow. Nobody pushes to `main` directly: work on a branch named after its purpose (for example `fix/event-time-zone-shift`) and open a pull request. The full steps are under "Git workflow" in AGENTS.md.
