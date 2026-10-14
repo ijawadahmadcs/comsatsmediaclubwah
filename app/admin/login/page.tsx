@@ -31,7 +31,7 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#08090b] px-5 text-white mt-20">
+    <main className="flex min-h-screen items-center justify-center bg-[#08090b] px-5 text-white">
       <div className="w-full max-w-md rounded-[2rem] border border-white/10 bg-[#0b0d10] p-7 shadow-2xl sm:p-10">
         <p className="text-xs uppercase tracking-[0.3em] text-blue-300/60">
           COMSATS Media Club

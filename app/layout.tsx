@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import { Analytics } from "@vercel/analytics/next"
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,6 +17,7 @@ export const metadata: Metadata = {
   description: "Comsats Media Club Wah is a student-run organization dedicated to promoting media literacy, creativity, and collaboration among students. We provide a platform for students to explore various forms of media, including photography, videography, graphic design, and journalism. Our club aims to foster a community of passionate individuals who are eager to learn, share their skills, and contribute to the vibrant media landscape at Comsats University.",
 };
 
+// The public navbar and footer live in app/(site)/layout.tsx, so the portals do not render them.
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
@@ -27,9 +26,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <Analytics/>
-        <Navbar/>
         {children}
-        <Footer/>
         </body>
     </html>
   );

@@ -1,101 +1,53 @@
 "use client";
 
-import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { coreRoleRank } from "@/lib/teamRoles";
 
+// Shape returned by the public GET /api/team (public fields only).
 type TeamMember = {
   _id: string;
   name: string;
   role: string;
-  registrationNumber?: string;
-  contactNumber?: string;
-  areaOfInterest?: string;
-  image?: string;
+  group: "core" | "lead" | "member";
   order: number;
-};
-
-type AcceptedApplicant = {
-  _id: string;
-  fullName: string;
-  registrationNumber: string;
   areaOfInterest?: string;
+  contactNumber?: string;
   image?: string;
 };
 
-const coreRoles = [
-  "president",
-  "vice president",
-  "general secretary",
-  "treasurer",
-  "media/communications secretary",
-];
-
-const leadRoles = [
-  "videographylead",
-  "videoeditinglead",
-  "photographylead",
-  "graphicslead",
-  "contentcreationlead",
-];
-
-function normalizeRole(role: string) {
-  return role
-    .trim()
-    .toLowerCase()
-    .replace(/\s*\/\s*/g, "/");
-}
-
-function isCoreMember(member: TeamMember) {
-  return coreRoles.includes(normalizeRole(member.role));
-}
-
-function isLeadMember(member: TeamMember) {
-  return leadRoles.includes(normalizeRole(member.role).replace(/\s+/g, ""));
-}
-
-function MemberImage({ member }: { member: TeamMember }) {
+function MemberImage({
+  member,
+  sizes,
+  initialClassName,
+}: {
+  member: TeamMember;
+  sizes: string;
+  initialClassName: string;
+}) {
   if (!member.image) {
     return (
-      <div className="flex h-full w-full items-center justify-center bg-white/[0.06] text-5xl font-semibold text-white/25">
+      <div className={`flex h-full w-full items-center justify-center ${initialClassName}`}>
         {member.name.charAt(0).toUpperCase()}
       </div>
     );
   }
+  // A real <img> element, never a CSS url() built from a string. The API only returns our own uploads.
   return (
-    <div
-      className="h-full w-full bg-cover bg-center"
-      style={{ backgroundImage: `url('${member.image}')` }}
-      role="img"
-      aria-label={member.name}
-    />
-  );
-}
-
-function ApplicantImage({ applicant }: { applicant: AcceptedApplicant }) {
-  if (!applicant.image) {
-    return (
-      <div className="flex h-full w-full items-center justify-center bg-white/[0.07] text-lg font-semibold text-white/35">
-        {applicant.fullName.charAt(0).toUpperCase()}
-      </div>
-    );
-  }
-  return (
-    <div
-      className="h-full w-full bg-cover bg-center"
-      style={{ backgroundImage: `url('${applicant.image}')` }}
-      role="img"
-      aria-label={applicant.fullName}
+    <Image
+      src={member.image}
+      alt={member.name}
+      fill
+      sizes={sizes}
+      unoptimized
+      className="object-cover"
     />
   );
 }
 
 export default function TeamPage() {
   const [members, setMembers] = useState<TeamMember[]>([]);
-  const [acceptedApplicants, setAcceptedApplicants] = useState<
-    AcceptedApplicant[]
-  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedInterest, setSelectedInterest] = useState("All");
@@ -108,7 +60,6 @@ export default function TeamPage() {
         if (!response.ok || !result.success)
           throw new Error(result.message || "Unable to load team members.");
         setMembers(result.members);
-        setAcceptedApplicants(result.acceptedApplicants || []);
       } catch (loadError) {
         setError(
           loadError instanceof Error
@@ -123,25 +74,13 @@ export default function TeamPage() {
   }, []);
 
   const coreMembers = members
-    .filter(isCoreMember)
-    .sort(
-      (a, b) =>
-        coreRoles.indexOf(normalizeRole(a.role)) -
-        coreRoles.indexOf(normalizeRole(b.role)),
-    );
+    .filter((member) => member.group === "core")
+    .sort((a, b) => coreRoleRank(a.role) - coreRoleRank(b.role));
   const leadMembers = members
-    .filter(isLeadMember)
+    .filter((member) => member.group === "lead")
     .sort((a, b) => a.order - b.order);
-  const coreOrLeadRegistrationNumbers = new Set(
-    members
-      .filter((member) => isCoreMember(member) || isLeadMember(member))
-      .map((member) => member.registrationNumber?.trim().toLowerCase())
-      .filter(Boolean),
-  );
-  const generalMembers = acceptedApplicants.filter(
-    (applicant) =>
-      applicant.fullName.trim().length > 0 &&
-      !coreOrLeadRegistrationNumbers.has(applicant.registrationNumber?.trim().toLowerCase()),
+  const generalMembers = members.filter(
+    (member) => member.group === "member" && member.name.trim().length > 0,
   );
   const interests = [
     "All",
@@ -228,8 +167,12 @@ export default function TeamPage() {
                       transition={{ duration: 0.45, delay: index * 0.06 }}
                       className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]"
                     >
-                      <div className="aspect-[4/5] overflow-hidden">
-                        <MemberImage member={member} />
+                      <div className="relative aspect-[4/5] overflow-hidden">
+                        <MemberImage
+                          member={member}
+                          sizes="(min-width: 1024px) 20vw, (min-width: 640px) 50vw, 100vw"
+                          initialClassName="bg-white/[0.06] text-5xl font-semibold text-white/25"
+                        />
                       </div>
                       <div className="p-4">
                         <p className="text-[10px] uppercase tracking-[0.16em] text-blue-200/65">
@@ -268,9 +211,13 @@ export default function TeamPage() {
                       viewport={{ once: true }}
                       transition={{ duration: 0.4, delay: index * 0.05 }}
                       className="group flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.025] p-3 transition hover:border-blue-200/30 hover:bg-blue-200/[0.05]"
-                    >                   
-                      <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-[#101216] sm:h-24 sm:w-24">
-                        <MemberImage member={member} />
+                    >
+                      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-[#101216] sm:h-24 sm:w-24">
+                        <MemberImage
+                          member={member}
+                          sizes="96px"
+                          initialClassName="bg-white/[0.06] text-5xl font-semibold text-white/25"
+                        />
                       </div>
                       <div className="min-w-0">
                         <h3 className="mt-1 truncate text-base font-medium text-white/90">
@@ -328,11 +275,15 @@ export default function TeamPage() {
                       transition={{ duration: 0.35, delay: (index % 5) * 0.05 }}
                       className="rounded-xl border border-white/10 bg-white/[0.025] p-4"
                     >
-                      <div className="h-12 w-12 overflow-hidden rounded-lg bg-white/[0.07]">
-                        <ApplicantImage applicant={member} />
+                      <div className="relative h-12 w-12 overflow-hidden rounded-lg bg-white/[0.07]">
+                        <MemberImage
+                          member={member}
+                          sizes="48px"
+                          initialClassName="bg-white/[0.07] text-lg font-semibold text-white/35"
+                        />
                       </div>
                       <h3 className="mt-4 truncate text-sm font-medium text-white/85">
-                        {member.fullName}
+                        {member.name}
                       </h3>
                       <p className="mt-2 text-xs leading-5 text-blue-200/60">
                         {member.areaOfInterest || "Media Club Member"}

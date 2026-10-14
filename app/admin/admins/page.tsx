@@ -1,6 +1,8 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import PasswordDialog from "@/components/PasswordDialog";
+import { PASSWORD_MIN_LENGTH } from "@/lib/password";
 
 type Admin = {
   _id: string;
@@ -20,6 +22,7 @@ export default function AdminsPage() {
   });
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const [passwordTarget, setPasswordTarget] = useState<Admin | null>(null);
   async function load() {
     try {
       const response = await fetch("/api/admins");
@@ -72,6 +75,17 @@ export default function AdminsPage() {
     setMessage(response.ok ? success : result.message);
     if (response.ok) void load();
   }
+  async function resetPassword(admin: Admin, password: string) {
+    const response = await fetch(`/api/admins/${admin._id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message || "Unable to reset the password.");
+    setPasswordTarget(null);
+    setMessage("Password reset. The account has been signed out everywhere.");
+  }
   async function remove(admin: Admin) {
     if (!window.confirm(`Delete ${admin.registrationNumber}?`)) return;
     const response = await fetch(`/api/admins/${admin._id}`, {
@@ -107,9 +121,10 @@ export default function AdminsPage() {
           />
           <input
             required
-            minLength={8}
+            minLength={PASSWORD_MIN_LENGTH}
             type="password"
-            placeholder="Password"
+            autoComplete="new-password"
+            placeholder={`Password (${PASSWORD_MIN_LENGTH}+ characters)`}
             value={form.password}
             onChange={(event) =>
               setForm({ ...form, password: event.target.value })
@@ -174,17 +189,7 @@ export default function AdminsPage() {
                               {admin.isActive ? "Deactivate" : "Activate"}
                             </button>
                             <button
-                              onClick={() => {
-                                const password = window.prompt(
-                                  "New password (8+ characters):",
-                                );
-                                if (password)
-                                  void update(
-                                    admin._id,
-                                    { password },
-                                    "Password reset.",
-                                  );
-                              }}
+                              onClick={() => setPasswordTarget(admin)}
                               className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/70"
                             >
                               Reset Password
@@ -206,6 +211,13 @@ export default function AdminsPage() {
           </table>
         </div>
       </div>
+      {passwordTarget && (
+        <PasswordDialog
+          title={`Reset password for ${passwordTarget.name || passwordTarget.registrationNumber}`}
+          onCancel={() => setPasswordTarget(null)}
+          onSubmit={(password) => resetPassword(passwordTarget, password)}
+        />
+      )}
     </main>
   );
 }

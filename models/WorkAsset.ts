@@ -1,6 +1,15 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, type Model } from "mongoose";
 
-const workAssetSchema = new Schema(
+export interface IWorkAsset {
+  url: string;
+  publicId: string;
+  resourceType: "image" | "video";
+  order: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const workAssetSchema = new Schema<IWorkAsset>(
   {
     url: { type: String, required: true, trim: true },
     publicId: { type: String, required: true, trim: true, unique: true },
@@ -10,6 +19,7 @@ const workAssetSchema = new Schema(
   { timestamps: true, versionKey: false },
 );
 
-const WorkAsset = mongoose.models.WorkAsset || mongoose.model("WorkAsset", workAssetSchema);
+const WorkAsset =
+  (mongoose.models.WorkAsset as Model<IWorkAsset> | undefined) ?? mongoose.model<IWorkAsset>("WorkAsset", workAssetSchema);
 
 export default WorkAsset;

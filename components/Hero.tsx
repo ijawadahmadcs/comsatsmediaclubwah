@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowDown, ArrowRight } from "lucide-react";
@@ -10,12 +11,14 @@ export default function Hero() {
       {/* Hero Container */}
       <div className="relative min-h-[calc(100vh-1.5rem)] sm:min-h-[calc(100vh-2.5rem)] overflow-hidden rounded-[2rem] border border-white/10">
         
-        {/* Background Image */}
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage: "url('/hero.png')",
-          }}
+        {/* Background Image: next/image serves a resized WebP instead of the 1.5 MB PNG */}
+        <Image
+          src="/hero.png"
+          alt=""
+          fill
+          preload
+          sizes="100vw"
+          className="object-cover object-center"
         />
 
         {/* Dark Cinematic Overlay */}

@@ -1,12 +1,13 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Pencil, Plus, Trash2, X } from "lucide-react";
+import { checkUploadFile, uploadDirectToCloudinary } from "@/lib/directUpload";
 
-type TeamMember = {
-  _id: string;
+type FormValues = {
   name: string;
   role: string;
   department?: string;
@@ -19,7 +20,16 @@ type TeamMember = {
   instagram?: string;
   facebook?: string;
   linkedin?: string;
+  order?: number;
+};
+
+type TeamMember = FormValues & {
+  _id: string;
   order: number;
+  // Status of the application the member was created from, if any.
+  applicationStatus?: string;
+  // False when the member's application is no longer Accepted: hidden from the public site.
+  isPublic: boolean;
 };
 
 type AcceptedApplicant = {
@@ -28,10 +38,36 @@ type AcceptedApplicant = {
   registrationNumber: string;
   department: string;
   areaOfInterest: string;
-  teamMemberId?: string;
 };
 
-type FormValues = Omit<TeamMember, "_id">;
+function pickFormValues(member: TeamMember): FormValues {
+  const { name, role, department, registrationNumber, contactNumber, semester, areaOfInterest, bio, image, instagram, facebook, linkedin, order } = member;
+  return { name, role, department, registrationNumber, contactNumber, semester, areaOfInterest, bio, image, instagram, facebook, linkedin, order };
+}
+
+function MemberAvatar({ member }: { member: TeamMember }) {
+  return (
+    <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/[0.05] text-sm text-white/40">
+      {member.image ? (
+        <Image src={member.image} alt="" fill sizes="44px" unoptimized className="object-cover" />
+      ) : (
+        member.name.charAt(0).toUpperCase()
+      )}
+    </div>
+  );
+}
+
+function HiddenBadge({ member }: { member: TeamMember }) {
+  if (member.isPublic) return null;
+  return (
+    <span
+      title="This member's application is not Accepted, so they are hidden from the public site and Team Lead rosters."
+      className="ml-2 rounded-full border border-amber-300/25 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-amber-200/80"
+    >
+      Hidden · application {member.applicationStatus?.toLowerCase()}
+    </span>
+  );
+}
 
 const emptyForm: FormValues = {
   name: "",
@@ -88,29 +124,12 @@ export default function TeamManagementPage() {
   async function loadMembers() {
     setIsLoading(true);
     try {
-      const [teamResponse, applicationsResponse] = await Promise.all([
-        fetch("/api/team"),
-        fetch("/api/applications"),
-      ]);
-      const teamResult = await teamResponse.json();
-      const applicationsResult = await applicationsResponse.json();
-      if (!teamResponse.ok || !teamResult.success)
-        throw new Error(teamResult.message || "Unable to load team members.");
-      if (!applicationsResponse.ok || !applicationsResult.success)
-        throw new Error(
-          applicationsResult.message || "Unable to load accepted applicants.",
-        );
-      setMembers(teamResult.members);
-      setAcceptedApplicants(
-        applicationsResult.applications.filter(
-          (
-            application: AcceptedApplicant & {
-              status?: string;
-              teamMemberId?: string;
-            },
-          ) => application.status === "Accepted" && !application.teamMemberId,
-        ),
-      );
+      const response = await fetch("/api/admin/team");
+      const result = await response.json();
+      if (!response.ok || !result.success)
+        throw new Error(result.message || "Unable to load team members.");
+      setMembers(result.members);
+      setAcceptedApplicants(result.acceptedApplicants);
     } catch (loadError) {
       setFeedback({
         type: "error",
@@ -142,7 +161,7 @@ export default function TeamManagementPage() {
 
   function openEditForm(member: TeamMember) {
     setEditingMember(member);
-    setForm({ ...emptyForm, ...member });
+    setForm({ ...emptyForm, ...pickFormValues(member) });
     setImageFile(null);
     setFormError("");
     setIsFormOpen(true);
@@ -180,28 +199,19 @@ export default function TeamManagementPage() {
       let image = form.image;
       if (imageFile) {
         setIsUploading(true);
-        const uploadData = new FormData();
-        uploadData.append("file", imageFile);
-        const uploadResponse = await fetch("/api/upload", {
-          method: "POST",
-          body: uploadData,
-          credentials: "include",
-        });
-        const uploadResult = await uploadResponse.json();
-        if (uploadResponse.status === 401) {
-          router.replace("/admin/login");
-          throw new Error(
-            "Your admin session has expired. Please sign in again.",
-          );
+        try {
+          // Uploaded straight to Cloudinary, so large photos are not limited by Vercel's body size limit.
+          image = (await uploadDirectToCloudinary(imageFile, "team-photo")).secureUrl;
+        } catch (uploadError) {
+          if ((uploadError as { status?: number }).status === 401) router.replace("/admin/login");
+          throw uploadError;
         }
-        if (!uploadResponse.ok || !uploadResult.success)
-          throw new Error(uploadResult.message || "Unable to upload image.");
-        image = uploadResult.secure_url;
       }
       const response = await fetch(url, {
         method: editingMember ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, image }),
+        // Send cleared numbers as "" (JSON drops undefined) so the server can clear them.
+        body: JSON.stringify({ ...form, semester: form.semester ?? "", order: form.order ?? "", image }),
       });
       const result = await response.json();
       if (!response.ok || !result.success)
@@ -290,7 +300,7 @@ export default function TeamManagementPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#08090b] px-3 py-28 text-white sm:px-5">
+    <main className="min-h-screen bg-[#08090b] px-3 py-16 text-white sm:px-5">
       <section className="mx-auto max-w-7xl rounded-[2rem] border border-white/10 bg-[#0b0d10] px-6 py-10 sm:px-10 lg:px-16">
         <div className="flex flex-col justify-between gap-6 border-b border-white/10 pb-8 sm:flex-row sm:items-end">
           <div>
@@ -358,11 +368,11 @@ export default function TeamManagementPage() {
                   </p>
                   <button
                     type="button"
-                    disabled={isSaving || Boolean(applicant.teamMemberId)}
+                    disabled={isSaving}
                     onClick={() => void addAcceptedApplicant(applicant)}
                     className="mt-3 w-full rounded-lg border border-blue-200/15 px-3 py-2 text-xs text-blue-100/75 transition hover:bg-blue-200/10 disabled:cursor-not-allowed disabled:opacity-45"
                   >
-                    {applicant.teamMemberId ? "Already on team" : "Add to team"}
+                    Add to team
                   </button>
                 </div>
               ))}
@@ -395,21 +405,12 @@ export default function TeamManagementPage() {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/[0.05] text-sm text-white/40">
-                        {member.image ? (
-                          <img
-                            src={member.image}
-                            alt=""
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          member.name.charAt(0).toUpperCase()
-                        )}
-                      </div>
+                      <MemberAvatar member={member} />
                       <div className="min-w-0">
                         <p className="truncate font-medium text-white/85">
                           {member.name}
                         </p>
+                        <HiddenBadge member={member} />
                         <p className="mt-1 truncate text-xs text-white/45">
                           {member.role}
                         </p>
@@ -469,19 +470,10 @@ export default function TeamManagementPage() {
                     >
                       <td className="py-5 pr-5">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/[0.05] text-sm text-white/40">
-                            {member.image ? (
-                              <img
-                                src={member.image}
-                                alt=""
-                                className="h-full w-full object-cover"
-                              />
-                            ) : (
-                              member.name.charAt(0).toUpperCase()
-                            )}
-                          </div>
+                          <MemberAvatar member={member} />
                           <span className="font-medium text-white/85">
                             {member.name}
+                            <HiddenBadge member={member} />
                           </span>
                         </div>
                       </td>
@@ -589,9 +581,13 @@ export default function TeamManagementPage() {
                   <input
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
-                    onChange={(event) =>
-                      setImageFile(event.target.files?.[0] || null)
-                    }
+                    onChange={(event) => {
+                      const selected = event.target.files?.[0] || null;
+                      const error = selected ? checkUploadFile(selected, "team-photo") : null;
+                      if (error) event.target.value = "";
+                      setFormError(error || "");
+                      setImageFile(error ? null : selected);
+                    }}
                     className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white/60 file:mr-4 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:text-sm file:text-black"
                   />
                   {form.image && (

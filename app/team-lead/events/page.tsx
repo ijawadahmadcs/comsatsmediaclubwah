@@ -46,6 +46,13 @@ const emptyForm: FormState = {
   assignedMemberIds: [],
 };
 
+// <input type="datetime-local"> works in the browser's local time without a time zone.
+// Convert to/from full ISO timestamps so the server never has to guess the zone.
+function toLocalInputValue(isoDate: string) {
+  const date = new Date(isoDate);
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+}
+
 export default function TeamLeadEvents() {
   const [events, setEvents] = useState<EventRecord[]>([]);
   const [members, setMembers] = useState<TeamMember[]>([]);
@@ -87,13 +94,18 @@ export default function TeamLeadEvents() {
 
   async function handleSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const date = new Date(form.date);
+    if (Number.isNaN(date.getTime())) {
+      setError("Please choose a valid date and time.");
+      return;
+    }
     setSaving(true);
     setError("");
     try {
       const response = await fetch(editingEvent ? `/api/team-lead/events/${editingEvent._id}` : "/api/team-lead/events", {
         method: editingEvent ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, date: date.toISOString() }),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || (editingEvent ? "Unable to update event." : "Unable to create event."));
@@ -125,7 +137,7 @@ export default function TeamLeadEvents() {
     setForm({
       title: event.title,
       description: event.description || "",
-      date: new Date(event.date).toISOString().slice(0, 16),
+      date: toLocalInputValue(event.date),
       assignedMemberIds: event.assignedMembers.map((member) => member._id),
     });
     setShowCreate(true);
@@ -152,12 +164,12 @@ export default function TeamLeadEvents() {
   }
 
   return (
-    <main className="mt-20 min-h-screen bg-[#08090b] px-4 py-10 text-white sm:px-8 lg:px-12">
+    <main className="min-h-screen bg-[#08090b] px-4 py-10 text-white sm:px-8 lg:px-12">
       <div className="mx-auto max-w-7xl">
         <header className="flex flex-col gap-5 border-b border-white/10 pb-8 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="flex items-center gap-2 text-xs uppercase tracking-[0.28em] text-grey-300/70">
-              <span className="h-2 w-2 rounded-full bg-grey-300" />
+            <p className="flex items-center gap-2 text-xs uppercase tracking-[0.28em] text-gray-300/70">
+              <span className="h-2 w-2 rounded-full bg-gray-300" />
               Team Lead Portal
             </p>
             <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-5xl">
@@ -171,7 +183,7 @@ export default function TeamLeadEvents() {
           <button
             type="button"
             onClick={openCreate}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-grey-100"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-gray-100"
           >
             <Plus size={17} /> New event
           </button>
@@ -240,7 +252,7 @@ export default function TeamLeadEvents() {
           <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-white/10 bg-[#11161a] p-5 shadow-2xl sm:p-7">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-grey-300/70">
+                <p className="text-xs uppercase tracking-[0.2em] text-gray-300/70">
                   New record
                 </p>
                 <h2 className="mt-2 text-2xl font-semibold">{editingEvent ? "Edit event" : "Create an event"}</h2>
@@ -263,7 +275,7 @@ export default function TeamLeadEvents() {
                   onChange={(event) =>
                     setForm({ ...form, title: event.target.value })
                   }
-                  className="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none focus:border-grey-300/50"
+                  className="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none focus:border-gray-300/50"
                 />
               </label>
               <label className="block text-sm text-white/70">
@@ -274,7 +286,7 @@ export default function TeamLeadEvents() {
                     setForm({ ...form, description: event.target.value })
                   }
                   rows={3}
-                  className="mt-2 w-full resize-y rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none focus:border-grey-300/50"
+                  className="mt-2 w-full resize-y rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none focus:border-gray-300/50"
                 />
               </label>
               <label className="block text-sm text-white/70">
@@ -286,7 +298,7 @@ export default function TeamLeadEvents() {
                   onChange={(event) =>
                     setForm({ ...form, date: event.target.value })
                   }
-                  className="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none focus:border-grey-300/50"
+                  className="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none focus:border-gray-300/50"
                 />
               </label>
               <fieldset>
@@ -307,7 +319,7 @@ export default function TeamLeadEvents() {
                           type="checkbox"
                           checked={form.assignedMemberIds.includes(member._id)}
                           onChange={() => toggleMember(member._id)}
-                          className="h-4 w-4 accent-grey-300"
+                          className="h-4 w-4 accent-gray-300"
                         />
                         <span className="min-w-0">
                           <span className="block truncate text-white/85">
@@ -353,14 +365,14 @@ export default function TeamLeadEvents() {
 
 function EventCard({ event, onEdit, onDelete }: { event: EventRecord; onEdit: (event: EventRecord) => void; onDelete: (event: EventRecord) => void }) {
   return (
-    <div className="group rounded-2xl border border-white/10 bg-[#0d1114] p-5 transition hover:border-grey-300/30 hover:bg-[#11191d] sm:p-6">
+    <div className="group rounded-2xl border border-white/10 bg-[#0d1114] p-5 transition hover:border-gray-300/30 hover:bg-[#11191d] sm:p-6">
       <div className="flex items-start justify-between gap-4">
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-grey-300/10 text-grey-200">
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gray-300/10 text-gray-200">
           <CalendarDays size={20} />
         </div>
         <div className="flex items-center gap-2"><button type="button" onClick={() => onEdit(event)} aria-label={`Edit ${event.title}`} className="rounded-lg border border-white/10 p-2 text-white/45 transition hover:border-white/25 hover:text-white"><Pencil size={15} /></button><button type="button" onClick={() => void onDelete(event)} aria-label={`Delete ${event.title}`} className="rounded-lg border border-red-300/15 p-2 text-red-200/60 transition hover:border-red-300/40 hover:text-red-100"><Trash2 size={15} /></button></div>
       </div>
-      <Link href={`/team-lead/events/${event._id}`} className="block"><h3 className="mt-6 text-xl font-medium text-white/90">{event.title}</h3>{event.description && <p className="mt-2 line-clamp-2 text-sm leading-6 text-white/40">{event.description}</p>}<div className="mt-6 flex flex-wrap gap-4 border-t border-white/[0.08] pt-4 text-xs text-white/45"><span className="inline-flex items-center gap-2"><Clock3 size={14} />{new Date(event.date).toLocaleString()}</span><span className="inline-flex items-center gap-2"><Users size={14} />{event.assignedMembers?.length ?? 0} assigned</span></div><div className="mt-5 flex items-center gap-2 text-sm text-grey-200">Open event <CheckCircle2 size={15} className="transition group-hover:translate-x-1" /></div></Link>
+      <Link href={`/team-lead/events/${event._id}`} className="block"><h3 className="mt-6 text-xl font-medium text-white/90">{event.title}</h3>{event.description && <p className="mt-2 line-clamp-2 text-sm leading-6 text-white/40">{event.description}</p>}<div className="mt-6 flex flex-wrap gap-4 border-t border-white/[0.08] pt-4 text-xs text-white/45"><span className="inline-flex items-center gap-2"><Clock3 size={14} />{new Date(event.date).toLocaleString()}</span><span className="inline-flex items-center gap-2"><Users size={14} />{event.assignedMembers?.length ?? 0} assigned</span></div><div className="mt-5 flex items-center gap-2 text-sm text-gray-200">Open event <CheckCircle2 size={15} className="transition group-hover:translate-x-1" /></div></Link>
     </div>
   );
 }

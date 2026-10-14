@@ -51,12 +51,12 @@ export default function AdminDashboardPage() {
       ]
     : [];
   return (
-    <main className="min-h-screen bg-[#08090b] px-4 py-12 text-white sm:px-8 lg:px-12">
+    <main className="min-h-screen bg-[#08090b] px-4 py-16 text-white sm:px-8 lg:px-12">
       <div className="mx-auto max-w-7xl">
         <p className="text-xs uppercase tracking-[0.3em] text-blue-300/60">
           Overview
         </p>
-        <h1 className="mt-20 text-3xl font-semibold tracking-tight">
+        <h1 className="mt-4 text-3xl font-semibold tracking-tight">
           Dashboard
         </h1>
         <p className="mt-3 text-sm text-white/40">

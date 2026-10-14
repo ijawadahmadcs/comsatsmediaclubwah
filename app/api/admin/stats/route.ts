@@ -1,22 +1,31 @@
 import { NextResponse } from "next/server";
-import { requireApiAdmin } from "@/lib/auth";
+import { serverError } from "@/lib/api";
+import { requireApiStaff } from "@/lib/auth";
 import connectToDatabase from "@/lib/mongodb";
+import { findVisibleMembers } from "@/lib/teamMembers";
 import Application from "@/models/Application";
-import TeamMember from "@/models/TeamMember";
 
 export async function GET() {
-  if (!(await requireApiAdmin())) return NextResponse.json({ success: false, message: "Unauthorized." }, { status: 401 });
+  const auth = await requireApiStaff();
+  if (!auth.ok) return auth.response;
   try {
     await connectToDatabase();
-    const [totalTeamMembers, totalApplications, pendingApplications, acceptedApplications, recentApplications] = await Promise.all([
-      TeamMember.countDocuments(),
+    const [members, totalApplications, pendingApplications, acceptedApplications, recentApplications] = await Promise.all([
+      findVisibleMembers(),
       Application.countDocuments(),
-      Application.countDocuments({ $or: [{ status: "Pending" }, { status: { $exists: false } }] }),
+      Application.countDocuments({ status: { $in: ["Pending", null] } }),
       Application.countDocuments({ status: "Accepted" }),
       Application.find().sort({ createdAt: -1 }).limit(5).select("fullName registrationNumber areaOfInterest status createdAt").lean(),
     ]);
-    return NextResponse.json({ success: true, totalTeamMembers, totalApplications, pendingApplications, acceptedApplications, recentApplications: recentApplications.map((application) => ({ ...application, status: application.status || "Pending" })) });
-  } catch {
-    return NextResponse.json({ success: false, message: "Unable to load dashboard statistics." }, { status: 500 });
+    return NextResponse.json({
+      success: true,
+      totalTeamMembers: members.length,
+      totalApplications,
+      pendingApplications,
+      acceptedApplications,
+      recentApplications: recentApplications.map((application) => ({ ...application, status: application.status || "Pending" })),
+    });
+  } catch (error) {
+    return serverError("[ADMIN STATS ERROR]", error, "Unable to load dashboard statistics.");
   }
 }

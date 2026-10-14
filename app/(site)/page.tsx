@@ -1,53 +1,38 @@
 "use client";
 import Hero from "@/components/Hero";
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import {
-  ArrowRight,
-  Camera,
-  Clapperboard,
-  Palette,
-  PenTool,
-} from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { coreRoleRank, normalizeRole } from "@/lib/teamRoles";
 
 type CoreMember = {
   _id: string;
   name: string;
   role: string;
+  group: "core" | "lead" | "member";
   contactNumber?: string;
   image?: string;
 };
 
-const coreRoles = [
-  "president",
-  "vice president",
-  "general secretary",
-  "treasurer",
-  "media/communications secretary",
-];
-
-function normalizeRole(role: string) {
-  return role.trim().toLowerCase().replace(/\s*\/\s*/g, "/");
-}
-
 export default function Home() {
   const [coreMembers, setCoreMembers] = useState<CoreMember[]>([]);
+  const [coreTeamStatus, setCoreTeamStatus] = useState<"loading" | "ready" | "error">("loading");
 
   useEffect(() => {
     fetch("/api/team")
       .then(async (response) => {
         const result = await response.json();
-        if (response.ok && result.success) {
-          setCoreMembers(
-            result.members
-              .filter((member: CoreMember) => coreRoles.includes(normalizeRole(member.role)))
-              .filter((member: CoreMember) => normalizeRole(member.role) !== "president")
-              .sort((a: CoreMember, b: CoreMember) => coreRoles.indexOf(normalizeRole(a.role)) - coreRoles.indexOf(normalizeRole(b.role))),
-          );
-        }
+        if (!response.ok || !result.success) throw new Error(result.message);
+        setCoreMembers(
+          (result.members as CoreMember[])
+            .filter((member) => member.group === "core" && normalizeRole(member.role) !== "president")
+            .sort((a, b) => coreRoleRank(a.role) - coreRoleRank(b.role)),
+        );
+        setCoreTeamStatus("ready");
       })
-      .catch(() => undefined);
+      .catch(() => setCoreTeamStatus("error"));
   }, []);
 
   return (
@@ -64,11 +49,12 @@ export default function Home() {
             transition={{ duration: 0.8 }}
             className="relative min-h-[500px] lg:min-h-full"
           >
-            <div
-              className="absolute inset-0 bg-cover bg-center"
-              style={{
-                backgroundImage: "url('/faculty-head.png')",
-              }}
+            <Image
+              src="/faculty-head.png"
+              alt="Dr. Faisal Shafique Butt, Faculty Head of the COMSATS Media Club"
+              fill
+              sizes="(min-width: 1024px) 45vw, 100vw"
+              className="object-cover object-center"
             />
 
             {/* Dark overlay */}
@@ -149,11 +135,12 @@ export default function Home() {
             transition={{ duration: 0.8 }}
             className="relative min-h-[500px] lg:min-h-full"
           >
-            <div
-              className="absolute inset-0 bg-cover bg-center"
-              style={{
-                backgroundImage: "url('/president.jpeg')",
-              }}
+            <Image
+              src="/president.jpeg"
+              alt="Syed Imad Iltaf, President of the COMSATS Media Club"
+              fill
+              sizes="(min-width: 1024px) 45vw, 100vw"
+              className="object-cover object-center"
             />
 
             {/* Dark overlay */}
@@ -239,13 +226,17 @@ export default function Home() {
         </div>
 
         <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {coreMembers.length === 0 ? (
+          {coreTeamStatus === "loading" ? (
             <p className="text-sm text-white/35">Loading the core team...</p>
+          ) : coreTeamStatus === "error" ? (
+            <p className="text-sm text-white/35">The core team could not be loaded right now.</p>
+          ) : coreMembers.length === 0 ? (
+            <p className="text-sm text-white/35">The core team will be announced soon.</p>
           ) : (
             coreMembers.map((member) => (
               <div key={member._id} className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-white/[0.07]">
-                  {member.image ? <img src={member.image} alt={member.name} className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center text-lg font-semibold text-white/35">{member.name.charAt(0)}</div>}
+                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-white/[0.07]">
+                  {member.image ? <Image src={member.image} alt={member.name} fill sizes="56px" unoptimized className="object-cover" /> : <div className="flex h-full w-full items-center justify-center text-lg font-semibold text-white/35">{member.name.charAt(0)}</div>}
                 </div>
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-white/85">{member.name}</p>
@@ -268,7 +259,7 @@ export default function Home() {
               </p>
 
               <h2 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl">
-                What we've been
+                What we&apos;ve been
                 <br />
                 <span className="text-white/35">creating.</span>
               </h2>
@@ -284,27 +275,18 @@ export default function Home() {
           </div>
 
           <div className="mt-14 grid gap-3 lg:grid-cols-[1.4fr_0.8fr]">
-            <div
-              className="min-h-[420px] rounded-[1.5rem] border border-white/10 bg-cover bg-center"
-              style={{
-                backgroundImage: "url('/work/work-5.jpg')",
-              }}
-            />
+            <div className="relative min-h-[420px] overflow-hidden rounded-[1.5rem] border border-white/10">
+              <Image src="/work/work-5.jpg" alt="Selected work by the COMSATS Media Club" fill sizes="(min-width: 1024px) 60vw, 100vw" className="object-cover" />
+            </div>
 
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-              <div
-                className="min-h-[205px] rounded-[1.5rem] border border-white/10 bg-cover bg-center"
-                style={{
-                  backgroundImage: "url('/work/work-3.jpeg')",
-                }}
-              />
+              <div className="relative min-h-[205px] overflow-hidden rounded-[1.5rem] border border-white/10">
+                <Image src="/work/work-3.jpeg" alt="Selected work by the COMSATS Media Club" fill sizes="(min-width: 1024px) 35vw, (min-width: 640px) 50vw, 100vw" className="object-cover" />
+              </div>
 
-              <div
-                className="min-h-[205px] rounded-[1.5rem] border border-white/10 bg-cover bg-center"
-                style={{
-                  backgroundImage: "url('/work/work-8.jpg')",
-                }}
-              />
+              <div className="relative min-h-[205px] overflow-hidden rounded-[1.5rem] border border-white/10">
+                <Image src="/work/work-8.jpg" alt="Selected work by the COMSATS Media Club" fill sizes="(min-width: 1024px) 35vw, (min-width: 640px) 50vw, 100vw" className="object-cover" />
+              </div>
             </div>
           </div>
 
