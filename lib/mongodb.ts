@@ -34,8 +34,13 @@ globalWithMongoose.mongoose = cached;
 // by itself and queries wait for it (calling connect() again would leak a second client).
 // A failed first attempt clears the cached promise, so the next request tries again.
 export default async function connectToDatabase() {
-  if (cached.conn) {
+  if (cached.conn?.connection.readyState === 1) {
     return cached.conn;
+  }
+
+  if (cached.conn && cached.conn.connection.readyState !== 1) {
+    cached.conn = null;
+    cached.promise = null;
   }
 
   if (!cached.promise) {
