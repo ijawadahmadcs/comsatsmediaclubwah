@@ -273,7 +273,7 @@ export default function Home() {
           </Link>
         </div>
 
-        <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-10 grid gap-5 sm:grid-cols-2">
           {coreTeamStatus === "loading" ? (
             <p className="text-sm text-white/35">Loading the core team...</p>
           ) : coreTeamStatus === "error" ? (
@@ -288,15 +288,15 @@ export default function Home() {
             coreMembers.map((member) => (
               <div
                 key={member._id}
-                className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+                className="flex min-h-[150px] items-center gap-6 rounded-2xl border border-white/10 bg-white/[0.03] p-6 transition hover:border-white/20 hover:bg-white/[0.05]"
               >
-                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-white/[0.07]">
+                <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl bg-white/[0.07]">
                   {member.image ? (
                     <Image
                       src={member.image}
                       alt={member.name}
                       fill
-                      sizes="56px"
+                      sizes="96px"
                       unoptimized
                       className="object-cover"
                     />
@@ -307,10 +307,10 @@ export default function Home() {
                   )}
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-white/85">
+                  <p className="truncate text-base font-medium text-white/90">
                     {member.name}
                   </p>
-                  <p className="mt-1 truncate text-[10px] uppercase tracking-[0.14em] text-blue-200/60">
+                  <p className="mt-2 truncate text-[11px] uppercase tracking-[0.14em] text-blue-200/60">
                     {member.role}
                   </p>
                  
