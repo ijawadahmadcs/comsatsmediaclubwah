@@ -18,8 +18,23 @@ type Stats = {
   }[];
 };
 
+type RecognitionWinner = {
+  name: string;
+  role: string;
+  attendedEvents: number;
+  averageRating: number;
+};
+
+type RecognitionState = {
+  week: RecognitionWinner | null;
+  month: RecognitionWinner | null;
+  revealWeek: boolean;
+  revealMonth: boolean;
+};
+
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
+  const [recognition, setRecognition] = useState<RecognitionState | null>(null);
   const [error, setError] = useState("");
   useEffect(() => {
     fetch("/api/admin/stats")
@@ -36,6 +51,27 @@ export default function AdminDashboardPage() {
         ),
       );
   }, []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      fetch("/api/admin/recognition")
+        .then((response) => response.json())
+        .then((result) => setRecognition(result.success ? result : { week: null, month: null }))
+        .catch(() => setRecognition({ week: null, month: null, revealWeek: false, revealMonth: false }));
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  async function setRecognitionVisibility(period: "week" | "month") {
+    if (!recognition) return;
+    const field = period === "week" ? "revealWeek" : "revealMonth";
+    const response = await fetch("/api/admin/recognition", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ [field]: !recognition[field] }),
+    });
+    const result = await response.json();
+    if (response.ok) setRecognition({ ...recognition, revealWeek: result.revealWeek, revealMonth: result.revealMonth });
+  }
   if (error)
     return (
       <main className="min-h-screen bg-[#08090b] p-8 text-red-200">
@@ -81,6 +117,10 @@ export default function AdminDashboardPage() {
             </div>
           )}
         </div>
+        <section className="mt-7 rounded-2xl border border-amber-200/15 bg-amber-200/[0.04] p-5">
+          <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-end"><div><p className="text-xs uppercase tracking-[0.2em] text-amber-200/60">Recognition</p><h2 className="mt-2 text-xl font-medium">Current member highlights</h2></div><p className="text-xs text-white/35">Calculated from the latest 7 and 30 days</p></div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2"><AdminRecognitionCard label="Member of the week" winner={recognition?.week} revealed={recognition?.revealWeek ?? false} onToggle={() => void setRecognitionVisibility("week")} /><AdminRecognitionCard label="Member of the month" winner={recognition?.month} revealed={recognition?.revealMonth ?? false} onToggle={() => void setRecognitionVisibility("month")} /></div>
+        </section>
         <div className="mt-7 grid gap-6 xl:grid-cols-[1fr_0.7fr]">
           <section className="rounded-2xl border border-white/10 bg-[#0b0d10] p-5">
             <div className="flex items-center justify-between">
@@ -153,4 +193,8 @@ export default function AdminDashboardPage() {
       </div>
     </main>
   );
+}
+
+function AdminRecognitionCard({ label, winner, revealed, onToggle }: { label: string; winner: RecognitionWinner | null | undefined; revealed: boolean; onToggle: () => void }) {
+  return <div className="rounded-xl border border-white/10 bg-[#0b0d10] p-4"><div className="flex items-start justify-between gap-3"><p className="text-xs uppercase tracking-[0.16em] text-white/35">{label}</p><button type="button" onClick={onToggle} className={`rounded-full border px-3 py-1 text-[11px] transition ${revealed ? "border-emerald-300/30 bg-emerald-300/10 text-emerald-200" : "border-white/15 text-white/45 hover:bg-white/10"}`}>{revealed ? "Visible on home" : "Hidden from home"}</button></div>{winner ? <><p className="mt-4 text-lg font-medium text-white/85">{winner.name}</p><p className="mt-1 text-xs text-white/40">{winner.role}</p><p className="mt-4 text-sm text-white/60">{winner.attendedEvents} events attended · {winner.averageRating.toFixed(1)} / 5</p></> : <p className="mt-4 text-sm text-white/40">No qualifying member yet.</p>}</div>;
 }
