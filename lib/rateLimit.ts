@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import connectToDatabase from "@/lib/mongodb";
 import RateLimit from "@/models/RateLimit";
 
 // Fixed-window rate limiting stored in MongoDB, so limits hold across serverless instances.
@@ -31,6 +32,7 @@ function getBucket(rule: RateLimitRule, subject: string) {
 
 /** Reports whether the subject has already used up the rule's limit, without counting a new hit. */
 export async function checkRateLimit(rule: RateLimitRule, subject: string): Promise<RateLimitStatus> {
+  await connectToDatabase();
   const bucket = getBucket(rule, subject);
   const current = await RateLimit.findById(bucket.id).lean();
   return { limited: (current?.count ?? 0) >= rule.limit, retryAfterSeconds: bucket.retryAfterSeconds };
@@ -38,6 +40,7 @@ export async function checkRateLimit(rule: RateLimitRule, subject: string): Prom
 
 /** Counts one hit against the rule. */
 export async function recordRateLimitHit(rule: RateLimitRule, subject: string) {
+  await connectToDatabase();
   const bucket = getBucket(rule, subject);
   await RateLimit.updateOne(
     { _id: bucket.id },
@@ -48,6 +51,7 @@ export async function recordRateLimitHit(rule: RateLimitRule, subject: string) {
 
 /** Counts one hit and reports whether the subject is now over the limit. */
 export async function consumeRateLimit(rule: RateLimitRule, subject: string): Promise<RateLimitStatus> {
+  await connectToDatabase();
   const bucket = getBucket(rule, subject);
   const current = await RateLimit.findOneAndUpdate(
     { _id: bucket.id },

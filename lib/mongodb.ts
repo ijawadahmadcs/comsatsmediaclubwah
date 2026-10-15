@@ -38,7 +38,7 @@ export default async function connectToDatabase() {
     return cached.conn;
   }
 
-  if (cached.conn && cached.conn.connection.readyState !== 1) {
+  if (cached.conn) {
     cached.conn = null;
     cached.promise = null;
   }
