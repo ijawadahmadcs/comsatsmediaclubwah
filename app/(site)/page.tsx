@@ -114,7 +114,7 @@ export default function Home() {
     <>
       <Hero />
       {/* Faculty Head Vision */}
-      <section className=" m-6 relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#0b0d10]">
+      <section className="my-6 px-4 sm:px-6 relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#0b0d10]">
         <div className="grid min-h-[650px] lg:grid-cols-[0.9fr_1.1fr]">
           {/* Image */}
           <motion.div
@@ -200,7 +200,7 @@ export default function Home() {
       </section>
 
 
-      <section className="m-6 overflow-hidden rounded-[2rem] border border-white/10 bg-[#0b0d10]">
+      <section className="my-6 px-4 sm:px-6 overflow-hidden rounded-[2rem] border border-white/10 bg-[#0b0d10]">
         <div className="grid min-h-[360px] lg:grid-cols-[0.65fr_1.35fr]">
           <div className="relative min-h-[280px] bg-white/[0.03]">
             {advisor?.image ? (
@@ -251,77 +251,84 @@ export default function Home() {
       </section>
 
       {/* Core Team Preview */}
-      <section className="m-6 rounded-[2rem] border border-white/10 bg-[#0b0d10] px-6 py-12 sm:px-10 lg:px-16 lg:py-16">
-        <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
-          <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-white/35">
-              The Core Team
-            </p>
-            <h2 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
-              The people beside the vision.
-            </h2>
-          </div>
-          <Link
-            href="/team"
-            className="group inline-flex w-fit items-center gap-2 rounded-full border border-white/15 px-5 py-3 text-sm text-white/70 transition hover:border-white/40 hover:bg-white/10 hover:text-white"
-          >
-            Meet the team
-            <ArrowRight
-              size={15}
-              className="transition-transform group-hover:translate-x-1"
-            />
-          </Link>
-        </div>
+     
+<section className="m-6 my-6 rounded-2xl border border-white/10 bg-[#0b0d10] px-4 py-8 sm:rounded-[2rem] sm:px-6 sm:py-10 md:px-10 md:py-12 lg:px-16 lg:py-16">
+  <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+    <div className="min-w-0">
+      <p className="text-[10px] uppercase tracking-[0.25em] text-white/35 sm:text-xs sm:tracking-[0.3em]">
+        The Core Team
+      </p>
 
-        <div className="mt-10 grid gap-5 sm:grid-cols-2">
-          {coreTeamStatus === "loading" ? (
-            <p className="text-sm text-white/35">Loading the core team...</p>
-          ) : coreTeamStatus === "error" ? (
-            <p className="text-sm text-white/35">
-              The core team could not be loaded right now.
-            </p>
-          ) : coreMembers.length === 0 ? (
-            <p className="text-sm text-white/35">
-              The core team will be announced soon.
-            </p>
-          ) : (
-            coreMembers.map((member) => (
-              <div
-                key={member._id}
-                className="flex min-h-[150px] items-center gap-6 rounded-2xl border border-white/10 bg-white/[0.03] p-6 transition hover:border-white/20 hover:bg-white/[0.05]"
-              >
-                <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl bg-white/[0.07]">
-                  {member.image ? (
-                    <Image
-                      src={member.image}
-                      alt={member.name}
-                      fill
-                      sizes="96px"
-                      unoptimized
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-lg font-semibold text-white/35">
-                      {member.name.charAt(0)}
-                    </div>
-                  )}
-                </div>
-                <div className="min-w-0">
-                  <p className="truncate text-base font-medium text-white/90">
-                    {member.name}
-                  </p>
-                  <p className="mt-2 truncate text-[11px] uppercase tracking-[0.14em] text-blue-200/60">
-                    {member.role}
-                  </p>
-                 
-                </div>
+      <h2 className="mt-3 max-w-xl text-2xl font-semibold leading-tight tracking-tight sm:mt-4 sm:text-3xl md:text-4xl">
+        The people beside the vision.
+      </h2>
+    </div>
+
+    <Link
+      href="/team"
+      className="group inline-flex w-fit shrink-0 items-center gap-2 rounded-full border border-white/15 px-4 py-2.5 text-xs text-white/70 transition hover:border-white/40 hover:bg-white/10 hover:text-white sm:px-5 sm:py-3 sm:text-sm"
+    >
+      Meet the team
+      <ArrowRight
+        size={15}
+        className="transition-transform group-hover:translate-x-1"
+      />
+    </Link>
+  </div>
+
+  <div className="mt-7 grid grid-cols-1 gap-3 sm:mt-9 sm:grid-cols-2 sm:gap-4 lg:mt-10 lg:gap-5">
+    {coreTeamStatus === "loading" ? (
+      <p className="text-sm text-white/35">
+        Loading the core team...
+      </p>
+    ) : coreTeamStatus === "error" ? (
+      <p className="text-sm text-white/35">
+        The core team could not be loaded right now.
+      </p>
+    ) : coreMembers.length === 0 ? (
+      <p className="text-sm text-white/35">
+        The core team will be announced soon.
+      </p>
+    ) : (
+      coreMembers.map((member) => (
+        <div
+          key={member._id}
+          className="flex min-w-0 items-center gap-4 rounded-xl border border-white/10 bg-white/[0.03] p-4 transition hover:border-white/20 hover:bg-white/[0.05] sm:gap-5 sm:rounded-2xl sm:p-5 md:gap-6 md:p-6"
+        >
+          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-white/[0.07] sm:h-20 sm:w-20 sm:rounded-2xl md:h-24 md:w-24">
+            {member.image ? (
+              <Image
+                src={member.image}
+                alt={member.name}
+                fill
+                sizes="(max-width: 639px) 64px, (max-width: 767px) 80px, 96px"
+                unoptimized
+                className="object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-lg font-semibold text-white/35 sm:text-xl">
+                {member.name.charAt(0)}
               </div>
-            ))
-          )}
-        </div>
-      </section>
+            )}
+          </div>
 
-      <section className="m-6 rounded-[2rem] border border-white/10 bg-[#0b0d10] px-6 py-12 sm:px-10 lg:px-16 lg:py-16">
+          <div className="min-w-0 flex-1">
+            <p className="break-words text-sm font-medium leading-snug text-white/90 sm:text-base">
+              {member.name}
+            </p>
+
+            <p className="mt-2 break-words text-[10px] uppercase leading-relaxed tracking-[0.12em] text-blue-200/60 sm:text-[11px] sm:tracking-[0.14em]">
+              {member.role}
+            </p>
+          </div>
+        </div>
+      ))
+    )}
+  </div>
+</section>
+
+
+      <section className="my-6 mx-4 sm:mx-6 rounded-[2rem] border border-white/10 bg-[#0b0d10] px-6 py-12 sm:px-10 lg:px-16 lg:py-16">
         <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-blue-200/60">

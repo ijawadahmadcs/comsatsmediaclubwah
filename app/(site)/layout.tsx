@@ -5,10 +5,10 @@ import Footer from "@/components/Footer";
 // so they do not render the public navbar and footer.
 export default function SiteLayout({ children }: LayoutProps<"/">) {
   return (
-    <>
+    <div className="overflow-x-hidden">
       <Navbar />
       {children}
       <Footer />
-    </>
+    </div>
   );
 }
