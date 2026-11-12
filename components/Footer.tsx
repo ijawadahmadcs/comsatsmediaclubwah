@@ -11,6 +11,7 @@ const navLinks = [
   { name: "Our Work", href: "/work" },
   { name: "Team", href: "/team" },
   { name: "Join Us", href: "/join" },
+  { name: "Team Request", href: "/team-request" },
 ];
 
 const socials = [
@@ -142,16 +143,15 @@ export default function Footer() {
 
           {/* ================= BOTTOM ================= */}
           <div className="flex flex-col gap-5 text-xs text-white/30 sm:flex-row sm:items-center sm:justify-between">
-
+  <a href="https://ijawadahmad.vercel.app" target="_blank" rel="noopener noreferrer" className="leading-5">
+              Developed by: Jawad Ahmad <ArrowRight className="ml-1 inline h-3 w-3" />
+            </a>
             <p className="leading-5">
               © {new Date().getFullYear()} COMSATS Media Club.
               <span className="hidden sm:inline"> </span>
               <br className="sm:hidden" />
               All rights reserved.
             </p>
-            <a href="https://ijawadahmad.vercel.app" target="_blank" rel="noopener noreferrer" className="leading-5">
-              Developed by: Jawad Ahmad <ArrowRight className="ml-1 inline h-3 w-3" />
-            </a>
 
             <p className="text-[10px] uppercase tracking-[0.2em] text-white/25 sm:text-right">
               Capture • Create • Communicate

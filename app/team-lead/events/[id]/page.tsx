@@ -26,6 +26,14 @@ interface EventRecord {
   title: string;
   description?: string;
   date: string;
+  endsAt?: string;
+  location?: string;
+  society?: string;
+  studentLeadName?: string;
+  studentLeadContact?: string;
+  facultyLeadName?: string;
+  requestedPersons?: number;
+  requestedTeam?: string;
   assignedMembers: Member[];
   attendance?: string[];
   ratings?: Record<string, number>;
@@ -135,8 +143,9 @@ export default function EventDetail() {
             <p className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-cyan-300/70"><span className="h-2 w-2 rounded-full bg-cyan-300" />Event workspace</p>
             <div className="mt-5 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
               <div><h1 className="text-3xl font-semibold tracking-tight sm:text-5xl">{event.title}</h1>{event.description && <p className="mt-3 max-w-2xl text-sm leading-6 text-white/50">{event.description}</p>}</div>
-              <div className="flex flex-wrap gap-3 text-xs text-white/55"><span className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2"><CalendarDays size={14} />{new Date(event.date).toLocaleDateString()}</span><span className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2"><Clock3 size={14} />{new Date(event.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span></div>
+              <div className="flex flex-wrap gap-3 text-xs text-white/55"><span className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2"><CalendarDays size={14} />{new Date(event.date).toLocaleDateString()}</span><span className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2"><Clock3 size={14} />{new Date(event.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}{event.endsAt ? ` - ${new Date(event.endsAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : ""}</span></div>
             </div>
+            {(event.society || event.location || event.studentLeadName) && <div className="relative mt-6 grid gap-2 border-t border-white/10 pt-5 text-sm text-white/55 sm:grid-cols-2"><p><span className="text-white/30">Organizer:</span> {event.society || "—"}</p><p><span className="text-white/30">Location:</span> {event.location || "—"}</p><p><span className="text-white/30">Student lead:</span> {event.studentLeadName || "—"}{event.studentLeadContact ? ` (${event.studentLeadContact})` : ""}</p><p><span className="text-white/30">Faculty lead:</span> {event.facultyLeadName || "Not provided"}</p><p><span className="text-white/30">Requested:</span> {event.requestedPersons || "—"} person(s)</p></div>}
           </div>
         </header>
 

@@ -114,7 +114,7 @@ export default function Home() {
     <>
       <Hero />
       {/* Faculty Head Vision */}
-      <section className="my-6 px-4 sm:px-6 relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#0b0d10]">
+      <section className="my-6 m-6 px-4 sm:px-6 relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#0b0d10]">
         <div className="grid min-h-[650px] lg:grid-cols-[0.9fr_1.1fr]">
           {/* Image */}
           <motion.div
@@ -200,7 +200,7 @@ export default function Home() {
       </section>
 
 
-      <section className="my-6 px-4 sm:px-6 overflow-hidden rounded-[2rem] border border-white/10 bg-[#0b0d10]">
+      <section className="my-6 m-6 px-4 sm:px-6 overflow-hidden rounded-[2rem] border border-white/10 bg-[#0b0d10]">
         <div className="grid min-h-[360px] lg:grid-cols-[0.65fr_1.35fr]">
           <div className="relative min-h-[280px] bg-white/[0.03]">
             {advisor?.image ? (

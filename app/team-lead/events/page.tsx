@@ -18,6 +18,14 @@ type EventRecord = {
   title: string;
   description?: string;
   date: string;
+  endsAt?: string;
+  location?: string;
+  society?: string;
+  studentLeadName?: string;
+  studentLeadContact?: string;
+  facultyLeadName?: string;
+  requestedPersons?: number;
+  requestedTeam?: string;
   assignedMembers: Array<{
     _id: string;
     name: string;
@@ -372,7 +380,7 @@ function EventCard({ event, onEdit, onDelete }: { event: EventRecord; onEdit: (e
         </div>
         <div className="flex items-center gap-2"><button type="button" onClick={() => onEdit(event)} aria-label={`Edit ${event.title}`} className="rounded-lg border border-white/10 p-2 text-white/45 transition hover:border-white/25 hover:text-white"><Pencil size={15} /></button><button type="button" onClick={() => void onDelete(event)} aria-label={`Delete ${event.title}`} className="rounded-lg border border-red-300/15 p-2 text-red-200/60 transition hover:border-red-300/40 hover:text-red-100"><Trash2 size={15} /></button></div>
       </div>
-      <Link href={`/team-lead/events/${event._id}`} className="block"><h3 className="mt-6 text-xl font-medium text-white/90">{event.title}</h3>{event.description && <p className="mt-2 line-clamp-2 text-sm leading-6 text-white/40">{event.description}</p>}<div className="mt-6 flex flex-wrap gap-4 border-t border-white/[0.08] pt-4 text-xs text-white/45"><span className="inline-flex items-center gap-2"><Clock3 size={14} />{new Date(event.date).toLocaleString()}</span><span className="inline-flex items-center gap-2"><Users size={14} />{event.assignedMembers?.length ?? 0} assigned</span></div><div className="mt-5 flex items-center gap-2 text-sm text-gray-200">Open event <CheckCircle2 size={15} className="transition group-hover:translate-x-1" /></div></Link>
+      <Link href={`/team-lead/events/${event._id}`} className="block"><h3 className="mt-6 text-xl font-medium text-white/90">{event.title}</h3>{event.society && <p className="mt-2 text-sm text-cyan-200/70">{event.society}{event.location ? ` · ${event.location}` : ""}</p>}<div className="mt-4 flex flex-wrap gap-4 border-t border-white/[0.08] pt-4 text-xs text-white/45"><span className="inline-flex items-center gap-2"><Clock3 size={14} />{new Date(event.date).toLocaleString()}{event.endsAt ? ` - ${new Date(event.endsAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : ""}</span><span className="inline-flex items-center gap-2"><Users size={14} />{event.requestedPersons ? `${event.requestedPersons} requested · ` : ""}{event.assignedMembers?.length ?? 0} assigned</span></div><div className="mt-5 flex items-center gap-2 text-sm text-gray-200">Open event <CheckCircle2 size={15} className="transition group-hover:translate-x-1" /></div></Link>
     </div>
   );
 }

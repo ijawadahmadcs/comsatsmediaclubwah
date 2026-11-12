@@ -3,6 +3,7 @@ import { validateApplicationSubmission } from "@/lib/applicationRules";
 import { parseEventDate, parseEventInput, parseMemberIds } from "@/lib/eventInput";
 import { getPasswordError } from "@/lib/password";
 import { parseMemberInput } from "@/lib/teamMemberInput";
+import { parseEventRequestInput } from "@/lib/eventRequestInput";
 
 const MEMBER_ID = "507f1f77bcf86cd799439011";
 
@@ -86,6 +87,42 @@ describe("event input", () => {
   it("only changes the fields sent when updating an event", () => {
     expect(parseEventInput({ description: " Bring cameras " }, "update")).toEqual({ description: "Bring cameras" });
     expect(parseEventInput({ title: "x".repeat(151) }, "update")).toHaveProperty("error");
+  });
+});
+
+describe("parseEventRequestInput", () => {
+  const valid = {
+    eventName: "Annual dinner",
+    location: "Room 12",
+    startsAt: "2026-10-20T10:00:00Z",
+    endsAt: "2026-10-20T12:00:00Z",
+    society: "Computer Society",
+    studentLeadName: "Ali Khan",
+    studentLeadContact: "03001234567",
+    facultyLeadName: "",
+    requestedTeam: "Both",
+    requestedPersons: "5",
+  };
+
+  it("normalizes a valid coverage request", () => {
+    expect(parseEventRequestInput(valid)).toEqual(expect.objectContaining({
+      eventName: "Annual dinner",
+      requestedTeam: "Both",
+      requestedPersons: 5,
+      startsAt: new Date("2026-10-20T10:00:00Z"),
+      endsAt: new Date("2026-10-20T12:00:00Z"),
+    }));
+  });
+
+  it.each([
+    ["an invalid team", { requestedTeam: "Audio" }],
+    ["an ending time before the start", { endsAt: "2026-10-20T09:00:00Z" }],
+    ["a missing student lead", { studentLeadName: "" }],
+    ["an invalid contact number", { studentLeadContact: "not-a-number" }],
+    ["an invalid person count", { requestedPersons: "0" }],
+    ["a non-string event name", { eventName: { $gt: "" } }],
+  ])("rejects %s", (_label, change) => {
+    expect(parseEventRequestInput({ ...valid, ...change })).toHaveProperty("error");
   });
 });
 

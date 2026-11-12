@@ -51,6 +51,7 @@ type Handler = (request: Request, context: { params: Promise<Record<string, stri
 // must be listed, so a new route cannot be added without deciding who is allowed to use it.
 const ACCESS: Record<string, Partial<Record<Method, Access>>> = {
   "admin/activity": { GET: "superadmin" },
+  "admin/recognition": { GET: "staff", PATCH: "staff" },
   "admin/stats": { GET: "staff" },
   "admin/team": { GET: "staff" },
   "admin/team-leads": { GET: "superadmin" },
@@ -65,7 +66,9 @@ const ACCESS: Record<string, Partial<Record<Method, Access>>> = {
   // Clears the cookie, and revokes the session when there is one.
   "auth/logout": { POST: "public" },
   "auth/me": { GET: "session" },
+  "event-requests": { POST: "public" },
   health: { GET: "public" },
+  recognition: { GET: "public" },
   team: { GET: "public", POST: "staff" },
   "team/[id]": { GET: "staff", PUT: "staff", DELETE: "staff" },
   "team/from-application/[id]": { POST: "staff" },

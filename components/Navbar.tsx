@@ -12,6 +12,7 @@ const navItems = [
   { name: "Our Work", href: "/work" },
   { name: "Team", href: "/team" },
   { name: "Join Us", href: "/join" },
+  { name: "Team Request", href: "/team-request" },
 ];
 
 export default function Navbar() {
