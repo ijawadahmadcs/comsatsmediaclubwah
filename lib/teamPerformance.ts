@@ -98,13 +98,22 @@ export function buildTeamPerformanceRows(
 
 export async function getTeamPerformance(team: string): Promise<TeamPerformanceRow[]> {
   const approvedMemberIds = await getApprovedTeamMemberIds(team);
-  if (!approvedMemberIds.length) return [];
+  const teamScopedMembers = await TeamMember.find({
+    team: { $in: getTeamScope(team) },
+  }).select("_id").lean();
+  const memberIds = Array.from(new Set([
+    ...approvedMemberIds,
+    ...teamScopedMembers.map((member) => member._id.toString()),
+  ]));
+  if (!memberIds.length) return [];
 
   const [members, events] = await Promise.all([
-    TeamMember.find({ _id: { $in: approvedMemberIds } })
+    TeamMember.find({ _id: { $in: memberIds } })
       .select("name registrationNumber department role")
       .lean(),
-    Event.find({ team: { $in: getTeamScope(team) } })
+    Event.find({
+      assignedMembers: { $in: memberIds },
+    })
       .select("assignedMembers attendance ratings")
       .lean(),
   ]);

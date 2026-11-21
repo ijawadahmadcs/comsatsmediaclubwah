@@ -3,6 +3,7 @@ import type { ITeamMember } from "@/models/TeamMember";
 const STRING_FIELDS = {
   name: 100,
   role: 100,
+  clubMemberId: 20,
   department: 100,
   registrationNumber: 40,
   contactNumber: 20,
@@ -31,6 +32,17 @@ export type MemberChanges = {
 export function parseMemberInput(body: Record<string, unknown>, mode: "create" | "update"): MemberChanges | { error: string } {
   const set: Record<string, unknown> = {};
   const unset: Record<string, ""> = {};
+
+  if (body.clubMemberId !== undefined) {
+    if (typeof body.clubMemberId !== "string") return { error: "Invalid club member ID." };
+    const clubMemberId = body.clubMemberId.trim().toUpperCase();
+    if (clubMemberId) {
+      if (!/^CMC-\d{3,}$/i.test(clubMemberId)) return { error: "Club member ID must look like CMC-001." };
+      set.clubMemberId = clubMemberId;
+    } else if (mode === "update") {
+      unset.clubMemberId = "";
+    }
+  }
 
   for (const [field, limit] of Object.entries(STRING_FIELDS)) {
     const value = body[field];

@@ -5,7 +5,7 @@ import { requireApiStaff } from "@/lib/auth";
 import { isOwnCloudinaryImageUrl } from "@/lib/cloudinary";
 import connectToDatabase from "@/lib/mongodb";
 import { parseMemberInput } from "@/lib/teamMemberInput";
-import { findVisibleMembers, toPublicMembers } from "@/lib/teamMembers";
+import { ensureClubMemberIds, findVisibleMembers, toPublicMembers } from "@/lib/teamMembers";
 import TeamMember from "@/models/TeamMember";
 
 /** Public team list for the Team and Home pages: public fields only. Admins use /api/admin/team. */
@@ -33,13 +33,15 @@ export async function POST(request: Request) {
   try {
     await connectToDatabase();
     const member = await TeamMember.create(parsed.set);
+    await ensureClubMemberIds();
+    const savedMember = await TeamMember.findById(member._id).lean();
     await recordAudit(auth.account, {
       action: "team_member_created",
       targetType: "team_member",
       targetId: member._id.toString(),
       details: { name: member.name, role: member.role },
     });
-    return NextResponse.json({ success: true, member }, { status: 201 });
+    return NextResponse.json({ success: true, member: savedMember ?? member }, { status: 201 });
   } catch (error) {
     return serverError("[TEAM POST ERROR]", error, "Unable to create team member.");
   }

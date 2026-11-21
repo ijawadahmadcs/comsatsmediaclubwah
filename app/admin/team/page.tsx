@@ -10,6 +10,7 @@ import { checkUploadFile, uploadDirectToCloudinary } from "@/lib/directUpload";
 type FormValues = {
   name: string;
   role: string;
+  clubMemberId?: string;
   department?: string;
   registrationNumber?: string;
   contactNumber?: string;
@@ -41,8 +42,8 @@ type AcceptedApplicant = {
 };
 
 function pickFormValues(member: TeamMember): FormValues {
-  const { name, role, department, registrationNumber, contactNumber, semester, areaOfInterest, bio, image, instagram, facebook, linkedin, order } = member;
-  return { name, role, department, registrationNumber, contactNumber, semester, areaOfInterest, bio, image, instagram, facebook, linkedin, order };
+  const { name, role, clubMemberId, department, registrationNumber, contactNumber, semester, areaOfInterest, bio, image, instagram, facebook, linkedin, order } = member;
+  return { name, role, clubMemberId, department, registrationNumber, contactNumber, semester, areaOfInterest, bio, image, instagram, facebook, linkedin, order };
 }
 
 function MemberAvatar({ member }: { member: TeamMember }) {
@@ -72,6 +73,7 @@ function HiddenBadge({ member }: { member: TeamMember }) {
 const emptyForm: FormValues = {
   name: "",
   role: "",
+  clubMemberId: "",
   department: "",
   registrationNumber: "",
   contactNumber: "",
@@ -93,6 +95,7 @@ const fields: {
 }[] = [
   { key: "name", label: "Name *" },
   { key: "role", label: "Role *" },
+  { key: "clubMemberId", label: "Club Member ID" },
   { key: "department", label: "Department" },
   { key: "registrationNumber", label: "Registration Number" },
   { key: "contactNumber", label: "Contact Number" },
@@ -422,6 +425,7 @@ export default function TeamManagementPage() {
                   </div>
                   <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-white/45">
                     <span>{member.department || "No department"}</span>
+                    <span>{member.clubMemberId || "No club ID"}</span>
                     <span>
                       {member.semester
                         ? `Semester ${member.semester}`
@@ -455,6 +459,7 @@ export default function TeamManagementPage() {
                 <thead className="border-b border-white/10 text-xs uppercase tracking-[0.18em] text-white/30">
                   <tr>
                     <th className="pb-4 pr-5">Member</th>
+                    <th className="pb-4 pr-5">Club ID</th>
                     <th className="pb-4 pr-5">Role</th>
                     <th className="pb-4 pr-5">Department</th>
                     <th className="pb-4 pr-5">Semester</th>
@@ -476,6 +481,9 @@ export default function TeamManagementPage() {
                             <HiddenBadge member={member} />
                           </span>
                         </div>
+                      </td>
+                      <td className="py-5 pr-5 text-cyan-200/80">
+                        {member.clubMemberId || "-"}
                       </td>
                       <td className="py-5 pr-5 text-white/60">{member.role}</td>
                       <td className="py-5 pr-5 text-white/45">

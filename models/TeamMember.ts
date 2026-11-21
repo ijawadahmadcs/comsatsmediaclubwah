@@ -3,6 +3,7 @@ import mongoose, { Schema, Types, type Model } from "mongoose";
 export interface ITeamMember {
   name: string;
   role: string;
+  clubMemberId?: string;
   team?: string;
   department?: string;
   registrationNumber?: string;
@@ -26,6 +27,7 @@ const teamMemberSchema = new Schema<ITeamMember>(
   {
     name: { type: String, required: true, trim: true },
     role: { type: String, required: true, trim: true },
+    clubMemberId: { type: String, trim: true, uppercase: true, unique: true, sparse: true, index: true },
     team: { type: String, trim: true, index: true },
     department: { type: String, trim: true },
     registrationNumber: { type: String, trim: true },

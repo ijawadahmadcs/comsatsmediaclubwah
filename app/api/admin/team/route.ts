@@ -4,6 +4,7 @@ import { requireApiStaff } from "@/lib/auth";
 import connectToDatabase from "@/lib/mongodb";
 import Application from "@/models/Application";
 import TeamMember from "@/models/TeamMember";
+import { ensureClubMemberIds } from "@/lib/teamMembers";
 
 /**
  * GET /api/admin/team — every team member with all fields (staff only), plus the accepted
@@ -14,6 +15,7 @@ export async function GET() {
   if (!auth.ok) return auth.response;
   try {
     await connectToDatabase();
+    await ensureClubMemberIds();
     const [members, acceptedApplications] = await Promise.all([
       TeamMember.find().sort({ order: 1, createdAt: 1 }).lean(),
       Application.find({ status: "Accepted" })

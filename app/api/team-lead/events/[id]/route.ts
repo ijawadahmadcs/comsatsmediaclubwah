@@ -7,12 +7,14 @@ import connectToDatabase from "@/lib/mongodb";
 import { requireTeamLead } from "@/lib/requireTeamLead";
 import { getTeamScope } from "@/lib/teamScope";
 import { getApprovedTeamMemberIds } from "@/lib/teamleadMembers";
+import { ensureClubMemberIds } from "@/lib/teamMembers";
 import Event, { type IEvent } from "@/models/Event";
+import TeamMember from "@/models/TeamMember";
 
 type Context = { params: Promise<{ id: string }> };
 
 const notFound = () => jsonError("Event not found.", 404);
-const MEMBER_FIELDS = { path: "assignedMembers", select: "name registrationNumber" };
+const MEMBER_FIELDS = { path: "assignedMembers", select: "name registrationNumber clubMemberId team role" };
 
 /** GET single event */
 export async function GET(_request: Request, { params }: Context) {
@@ -58,7 +60,8 @@ export async function PUT(request: Request, { params }: Context) {
 
     if (input.memberIds) {
       const approvedMemberIds = await getApprovedTeamMemberIds(lead.team);
-      if (input.memberIds.some((memberId) => !approvedMemberIds.includes(memberId))) {
+      const retainedTemporaryIds = existing.assignedMembers.map(String);
+      if (input.memberIds.some((memberId) => !approvedMemberIds.includes(memberId) && !retainedTemporaryIds.includes(memberId))) {
         return jsonError("Only approved members from your team can be assigned.", 403);
       }
       set.assignedMembers = input.memberIds.map((memberId) => new mongoose.Types.ObjectId(memberId));
@@ -116,7 +119,7 @@ export async function POST(request: Request, { params }: Context) {
   const { id } = await params;
   if (!mongoose.isValidObjectId(id)) return notFound();
   const action = new URL(request.url).searchParams.get("action");
-  if (action !== "attendance" && action !== "rating") return jsonError("Invalid action.", 400);
+  if (action !== "attendance" && action !== "rating" && action !== "temporary-member") return jsonError("Invalid action.", 400);
   const body = await readJsonObject(request);
   if (!body) return jsonError("Invalid request data.", 400);
 
@@ -125,6 +128,25 @@ export async function POST(request: Request, { params }: Context) {
     const event = await Event.findOne({ _id: id, team: { $in: getTeamScope(lead.team) } });
     if (!event) return notFound();
     const assignedIds = event.assignedMembers.map(String);
+
+    if (action === "temporary-member") {
+      await ensureClubMemberIds();
+      const clubMemberId = typeof body.clubMemberId === "string" ? body.clubMemberId.trim().toUpperCase() : "";
+      if (!/^CMC-\d{3,}$/i.test(clubMemberId)) return jsonError("Enter a valid club member ID, for example CMC-001.", 400);
+      const member = await TeamMember.findOne({ clubMemberId }).select("name registrationNumber clubMemberId team role").lean();
+      if (!member) return jsonError("No club member was found with that ID.", 404);
+      if (assignedIds.includes(member._id.toString())) return jsonError("This member is already assigned to the event.", 409);
+      event.assignedMembers.push(member._id);
+      await event.save();
+      await recordAudit(lead, {
+        action: "temporary_member_added",
+        targetType: "event",
+        targetId: id,
+        details: { memberId: member._id.toString(), clubMemberId: member.clubMemberId, name: member.name, team: member.team || "" },
+      });
+      await event.populate({ path: "assignedMembers", select: "name registrationNumber clubMemberId team role" });
+      return NextResponse.json({ success: true, member: member, event: event });
+    }
 
     if (action === "attendance") {
       const memberIds = parseMemberIds(body.memberIds);

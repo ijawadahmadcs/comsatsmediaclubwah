@@ -8,6 +8,7 @@ import {
   Clock3,
   Save,
   Star,
+  UserPlus,
   Users,
   X,
 } from "lucide-react";
@@ -19,6 +20,7 @@ interface Member {
   _id: string;
   name: string;
   registrationNumber?: string;
+  clubMemberId?: string;
 }
 
 interface EventRecord {
@@ -49,6 +51,28 @@ export default function EventDetail() {
   const [ratingData, setRatingData] = useState<{ memberId: string; rating: number; remark?: string } | null>(null);
   const [savingAttendance, setSavingAttendance] = useState(false);
   const [savingRating, setSavingRating] = useState(false);
+  const [temporaryClubId, setTemporaryClubId] = useState("");
+  const [addingTemporary, setAddingTemporary] = useState(false);
+
+  async function addTemporaryMember() {
+    setAddingTemporary(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/team-lead/events/${id}?action=temporary-member`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clubMemberId: temporaryClubId }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Unable to add the temporary member.");
+      setEvent((current) => current ? { ...current, assignedMembers: result.event.assignedMembers } : current);
+      setTemporaryClubId("");
+    } catch (addError) {
+      setError(addError instanceof Error ? addError.message : "Unable to add the temporary member.");
+    } finally {
+      setAddingTemporary(false);
+    }
+  }
 
   async function loadEvent() {
     setError("");
@@ -153,9 +177,31 @@ export default function EventDetail() {
 
         <section className="mt-6 grid gap-3 sm:grid-cols-3"><SummaryCard icon={Users} label="Assigned members" value={totalMembers} accent="text-cyan-300" /><SummaryCard icon={CheckCircle2} label="Present" value={`${attendanceCount} / ${totalMembers}`} accent="text-emerald-300" /><SummaryCard icon={CalendarDays} label="Attendance" value={`${attendancePercent}%`} accent="text-amber-300" /></section>
 
+        <section className="mt-6 rounded-2xl border border-cyan-300/15 bg-cyan-300/[0.04] p-5 sm:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-cyan-200/70"><UserPlus size={14} /> Cross-team helper</p>
+              <h2 className="mt-2 text-lg font-medium">Add temporary member</h2>
+              <p className="mt-1 text-sm text-white/40">Enter their permanent CMC club ID for this event only.</p>
+            </div>
+            <div className="flex w-full gap-2 sm:w-auto">
+              <input
+                value={temporaryClubId}
+                onChange={(input) => setTemporaryClubId(input.target.value.toUpperCase())}
+                placeholder="CMC-001"
+                maxLength={20}
+                className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm uppercase text-white outline-none placeholder:normal-case focus:border-cyan-300/40 sm:w-44"
+              />
+              <button type="button" onClick={() => void addTemporaryMember()} disabled={addingTemporary || !temporaryClubId.trim()} className="shrink-0 rounded-xl bg-cyan-300 px-4 py-3 text-sm font-medium text-black disabled:cursor-not-allowed disabled:opacity-50">
+                {addingTemporary ? "Adding..." : "Add member"}
+              </button>
+            </div>
+          </div>
+        </section>
+
         <section className="mt-6 rounded-2xl border border-white/10 bg-[#0d1114] p-5 sm:p-7">
           <div className="flex flex-col gap-3 border-b border-white/10 pb-5 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs uppercase tracking-[0.2em] text-white/35">Live checklist</p><h2 className="mt-2 text-xl font-medium">Member attendance and ratings</h2></div><button type="button" onClick={() => void submitAttendance()} disabled={savingAttendance} className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black disabled:opacity-50"><Save size={16} />{savingAttendance ? "Saving..." : "Save attendance"}</button></div>
-          {event.assignedMembers.length ? <div className="mt-5 divide-y divide-white/[0.07]">{event.assignedMembers.map((member) => { const present = attendanceSet.has(member._id); const rating = event.ratings?.[member._id]; return <div key={member._id} className="flex flex-col gap-4 py-4 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-300/10 font-semibold text-cyan-200">{member.name.charAt(0).toUpperCase()}</div><div><p className="text-sm text-white/85">{member.name}</p><p className="mt-1 text-xs text-white/35">{member.registrationNumber || "Team member"}</p></div></div><div className="flex items-center gap-3"><button type="button" onClick={() => toggleAttendance(member._id)} className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs transition ${present ? "border-emerald-300/30 bg-emerald-300/10 text-emerald-200" : "border-white/10 text-white/50 hover:bg-white/10"}`}><span className={`flex h-4 w-4 items-center justify-center rounded border ${present ? "border-emerald-300 bg-emerald-300 text-black" : "border-white/25"}`}>{present && <Check size={11} />}</span>{present ? "Present" : "Not marked"}</button><button type="button" onClick={() => setRatingData({ memberId: member._id, rating: rating || 1, remark: event.remarks?.[member._id] || "" })} className="inline-flex items-center gap-2 rounded-xl border border-amber-300/20 px-3 py-2 text-xs text-amber-200/80 transition hover:bg-amber-300/10"><Star size={14} />{rating ? `${rating}/5` : "Rate"}</button></div></div>; })}</div> : <p className="py-10 text-center text-sm text-white/40">No members are assigned to this event.</p>}
+          {event.assignedMembers.length ? <div className="mt-5 divide-y divide-white/[0.07]">{event.assignedMembers.map((member) => { const present = attendanceSet.has(member._id); const rating = event.ratings?.[member._id]; return <div key={member._id} className="flex flex-col gap-4 py-4 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-300/10 font-semibold text-cyan-200">{member.name.charAt(0).toUpperCase()}</div><div><p className="text-sm text-white/85">{member.name}</p><p className="mt-1 text-xs text-white/35">{member.clubMemberId || member.registrationNumber || "Team member"}</p></div></div><div className="flex items-center gap-3"><button type="button" onClick={() => toggleAttendance(member._id)} className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs transition ${present ? "border-emerald-300/30 bg-emerald-300/10 text-emerald-200" : "border-white/10 text-white/50 hover:bg-white/10"}`}><span className={`flex h-4 w-4 items-center justify-center rounded border ${present ? "border-emerald-300 bg-emerald-300 text-black" : "border-white/25"}`}>{present && <Check size={11} />}</span>{present ? "Present" : "Not marked"}</button><button type="button" onClick={() => setRatingData({ memberId: member._id, rating: rating || 1, remark: event.remarks?.[member._id] || "" })} className="inline-flex items-center gap-2 rounded-xl border border-amber-300/20 px-3 py-2 text-xs text-amber-200/80 transition hover:bg-amber-300/10"><Star size={14} />{rating ? `${rating}/5` : "Rate"}</button></div></div>; })}</div> : <p className="py-10 text-center text-sm text-white/40">No members are assigned to this event.</p>}
         </section>
       </div>
 

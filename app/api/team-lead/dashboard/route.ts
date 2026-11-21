@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
+import mongoose from "mongoose";
 import { serverError } from "@/lib/api";
 import connectToDatabase from "@/lib/mongodb";
 import { requireTeamLead } from "@/lib/requireTeamLead";
 import { getTeamScope } from "@/lib/teamScope";
+import { getApprovedTeamMemberIds } from "@/lib/teamleadMembers";
 import Event from "@/models/Event";
+import TeamMember from "@/models/TeamMember";
 
 /**
  * GET /api/team-lead/dashboard
@@ -20,33 +23,75 @@ export async function GET() {
 
   try {
     await connectToDatabase();
+    const [approvedMemberIds, teamScopedMembers] = await Promise.all([
+      getApprovedTeamMemberIds(lead.team),
+      TeamMember.find({ team: { $in: teams } }).select("_id").lean(),
+    ]);
+    const memberIds = Array.from(new Set([
+      ...approvedMemberIds,
+      ...teamScopedMembers.map((member) => member._id.toString()),
+    ]));
+    const memberObjectIds = memberIds.map((memberId) => new mongoose.Types.ObjectId(memberId));
     const [totalEvents, attendanceAgg, ratingAgg] = await Promise.all([
-      Event.countDocuments({ team: { $in: teams } }),
+      Event.countDocuments({
+        $or: [
+          { team: { $in: teams } },
+          ...(memberObjectIds.length ? [{ assignedMembers: { $in: memberObjectIds } }] : []),
+        ],
+      }),
       Event.aggregate<{ totalAttended: number; totalAssigned: number }>([
         {
           $match: {
-            team: { $in: teams },
-            // Future events, and past events whose attendance was never taken, would count as 0%.
-            date: { $lte: new Date() },
-            $or: [{ attendanceRecordedAt: { $exists: true } }, { "attendance.0": { $exists: true } }],
+            $and: [
+              {
+                $or: [
+                  { team: { $in: teams } },
+                  ...(memberObjectIds.length ? [{ assignedMembers: { $in: memberObjectIds } }] : []),
+                ],
+              },
+              // Future events, and past events whose attendance were never taken, count as 0%.
+              { date: { $lte: new Date() } },
+              { $or: [{ attendanceRecordedAt: { $exists: true } }, { "attendance.0": { $exists: true } }] },
+            ],
           },
         },
         {
           $project: {
-            // Only count attendance of members who are still assigned to the event.
-            attended: { $size: { $setIntersection: [{ $ifNull: ["$attendance", []] }, { $ifNull: ["$assignedMembers", []] }] } },
-            assigned: { $size: { $ifNull: ["$assignedMembers", []] } },
+            // Count attendance and assignments for this team, including cross-team events.
+            attended: {
+              $size: {
+                $setIntersection: [
+                  { $ifNull: ["$attendance", []] },
+                  memberObjectIds,
+                ],
+              },
+            },
+            assigned: {
+              $size: {
+                $setIntersection: [
+                  { $ifNull: ["$assignedMembers", []] },
+                  memberObjectIds,
+                ],
+              },
+            },
           },
         },
         { $match: { assigned: { $gt: 0 } } },
         { $group: { _id: null, totalAttended: { $sum: "$attended" }, totalAssigned: { $sum: "$assigned" } } },
       ]),
       Event.aggregate<{ total: number; count: number }>([
-        { $match: { team: { $in: teams } } },
+        {
+          $match: {
+            $or: [
+              { team: { $in: teams } },
+              ...(memberObjectIds.length ? [{ assignedMembers: { $in: memberObjectIds } }] : []),
+            ],
+          },
+        },
         {
           $project: {
             ratingsArray: { $objectToArray: { $ifNull: ["$ratings", {}] } },
-            assigned: { $map: { input: { $ifNull: ["$assignedMembers", []] }, as: "member", in: { $toString: "$$member" } } },
+            assigned: memberIds,
           },
         },
         { $unwind: "$ratingsArray" },

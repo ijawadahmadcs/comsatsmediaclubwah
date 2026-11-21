@@ -12,6 +12,36 @@ import TeamMember, { type ITeamMember } from "@/models/TeamMember";
 export type MemberRecord = ITeamMember & { _id: Types.ObjectId };
 type ApplicationRecord = IApplication & { _id: Types.ObjectId };
 
+export async function ensureClubMemberIds() {
+  const members = await TeamMember.find({
+    $or: [{ clubMemberId: { $exists: false } }, { clubMemberId: null }, { clubMemberId: "" }],
+  })
+    .sort({ order: 1, createdAt: 1, _id: 1 })
+    .select("_id")
+    .lean();
+  if (!members.length) return;
+
+  const highest = await TeamMember.find({
+    clubMemberId: { $regex: /^CMC-\d+$/i },
+  })
+    .sort({ clubMemberId: -1 })
+    .select("clubMemberId")
+    .lean();
+  let nextNumber = 0;
+  for (const member of highest) {
+    const match = /^CMC-(\d+)$/i.exec(member.clubMemberId || "");
+    if (match) nextNumber = Math.max(nextNumber, Number(match[1]));
+  }
+
+  for (const member of members) {
+    nextNumber += 1;
+    await TeamMember.updateOne(
+      { _id: member._id, $or: [{ clubMemberId: { $exists: false } }, { clubMemberId: null }, { clubMemberId: "" }] },
+      { $set: { clubMemberId: `CMC-${String(nextNumber).padStart(3, "0")}` } },
+    );
+  }
+}
+
 export type PublicMemberGroup = "core" | "lead" | "member";
 
 export type PublicMember = {
@@ -111,6 +141,9 @@ export async function linkMemberToApplication(application: ApplicationRecord): P
       image: isOwnCloudinaryImageUrl(application.image) ? application.image : undefined,
       order: (lastMember?.order ?? 0) + 1,
     });
+    await ensureClubMemberIds();
+    const completeMember = await TeamMember.findById(member._id).lean();
+    if (completeMember) return { status: "created", member: completeMember };
     return { status: "created", member: member.toObject() };
   } catch (error) {
     // Two admins accepted the same application at once: use the member the other request created.

@@ -20,7 +20,7 @@ export async function GET() {
   try {
     await connectToDatabase();
     const events = await Event.find({ team: { $in: getTeamScope(lead.team) } })
-      .populate({ path: "assignedMembers", select: "name registrationNumber" })
+      .populate({ path: "assignedMembers", select: "name registrationNumber clubMemberId team role" })
       .sort({ date: -1 })
       .lean();
     return NextResponse.json({ events });
