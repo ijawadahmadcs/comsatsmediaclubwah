@@ -77,6 +77,7 @@ const ACCESS: Record<string, Partial<Record<Method, Access>>> = {
   "team-lead/events": { GET: "teamlead", POST: "teamlead" },
   "team-lead/events/[id]": { GET: "teamlead", PUT: "teamlead", DELETE: "teamlead", POST: "teamlead" },
   "team-lead/members": { GET: "teamlead" },
+  "team-lead/members/ranking-pdf": { GET: "teamlead" },
   "uploads/signature": { POST: "staff" },
   work: { GET: "public", POST: "staff" },
   "work/[id]": { DELETE: "staff" },

@@ -5,6 +5,7 @@ import {
   CalendarDays,
   ChartNoAxesCombined,
   CheckCircle2,
+  Download,
   LogOut,
   RefreshCw,
   Star,
@@ -80,6 +81,33 @@ export default function TeamLeadDashboard() {
   const firstName = profile?.name?.split(" ")[0] || "Team Lead";
   const attendance = Math.min(Math.max(data?.avgAttendancePct ?? 0, 0), 100);
   const rating = Math.min(Math.max(data?.avgRating ?? 0, 0), 5);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [downloadError, setDownloadError] = useState("");
+
+  async function downloadPerformancePdf() {
+    setDownloadingPdf(true);
+    setDownloadError("");
+    try {
+      const response = await fetch("/api/team-lead/members/ranking-pdf");
+      if (!response.ok) {
+        const result = await response.json().catch(() => null);
+        throw new Error(result?.error || "Unable to download the performance PDF.");
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${(profile?.team || "team").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase()}-performance-ranking.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (downloadException) {
+      setDownloadError(downloadException instanceof Error ? downloadException.message : "Unable to download the performance PDF.");
+    } finally {
+      setDownloadingPdf(false);
+    }
+  }
 
   return (
     <main className="min-h-screen bg-black px-4 py-10 text-white sm:px-8 lg:px-12">
@@ -158,8 +186,15 @@ export default function TeamLeadDashboard() {
                   <p className="text-xs uppercase tracking-[0.2em] text-white/35">Your roster</p>
                   <h2 className="mt-2 text-xl font-medium">Members in your scope</h2>
                 </div>
-                <p className="text-sm text-white/40">{loading ? "Loading..." : `${members.length} member${members.length === 1 ? "" : "s"}`}</p>
+                <div className="flex items-center gap-3">
+                  <p className="text-sm text-white/40">{loading ? "Loading..." : `${members.length} member${members.length === 1 ? "" : "s"}`}</p>
+                  <button type="button" onClick={() => void downloadPerformancePdf()} disabled={downloadingPdf || loading} className="inline-flex items-center gap-2 rounded-xl border border-white/15 px-3 py-2.5 text-xs text-white/70 transition hover:border-white/30 hover:text-white disabled:cursor-not-allowed disabled:opacity-50">
+                    <Download size={15} />
+                    {downloadingPdf ? "Generating..." : "Download ranking PDF"}
+                  </button>
+                </div>
               </div>
+              {downloadError && <p className="mt-3 text-sm text-red-200">{downloadError}</p>}
               {members.length ? (
                 <div className="mt-6 grid max-h-80 gap-2 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
                   {members.map((member) => (
