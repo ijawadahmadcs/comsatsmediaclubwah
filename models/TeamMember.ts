@@ -18,7 +18,6 @@ export interface ITeamMember {
   instagram?: string;
   facebook?: string;
   linkedin?: string;
-  order: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -45,7 +44,6 @@ const teamMemberSchema = new Schema<ITeamMember>(
     instagram: { type: String, trim: true },
     facebook: { type: String, trim: true },
     linkedin: { type: String, trim: true },
-    order: { type: Number, default: 0 },
   },
   { timestamps: true, versionKey: false },
 );

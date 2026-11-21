@@ -7,7 +7,7 @@ import { isOwnCloudinaryImageUrl } from "@/lib/cloudinary";
 import { destroyUnreferencedImages } from "@/lib/mediaCleanup";
 import connectToDatabase from "@/lib/mongodb";
 import { parseMemberInput } from "@/lib/teamMemberInput";
-import { removeMembersFromEvents } from "@/lib/teamMembers";
+import { ensureClubMemberIds, removeMembersFromEvents } from "@/lib/teamMembers";
 import Application from "@/models/Application";
 import TeamMember from "@/models/TeamMember";
 
@@ -58,6 +58,8 @@ export async function PUT(request: Request, { params }: RouteContext) {
     const member = await TeamMember.findByIdAndUpdate(id, update, { returnDocument: "after", runValidators: true }).lean();
     if (!member) return notFound();
     if (current.image && current.image !== member.image) await destroyUnreferencedImages([current.image]);
+    await ensureClubMemberIds();
+    const completeMember = await TeamMember.findById(id).lean();
 
     await recordAudit(auth.account, {
       action: "team_member_updated",
@@ -65,7 +67,7 @@ export async function PUT(request: Request, { params }: RouteContext) {
       targetId: id,
       details: { name: member.name, fields: [...Object.keys(parsed.set), ...Object.keys(parsed.unset)] },
     });
-    return NextResponse.json({ success: true, member });
+    return NextResponse.json({ success: true, member: completeMember ?? member });
   } catch (error) {
     return serverError("[TEAM MEMBER PUT ERROR]", error, "Unable to update team member.");
   }
@@ -84,6 +86,7 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
       await Application.updateOne({ _id: member.applicationId, teamMemberId: member._id }, { $unset: { teamMemberId: 1 }, $set: { updatedAt: new Date() } });
     }
     await removeMembersFromEvents([member._id]);
+    await ensureClubMemberIds();
     await destroyUnreferencedImages([member.image]);
     await recordAudit(auth.account, {
       action: "team_member_deleted",

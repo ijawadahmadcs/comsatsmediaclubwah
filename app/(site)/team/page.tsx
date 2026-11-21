@@ -11,7 +11,6 @@ type TeamMember = {
   name: string;
   role: string;
   group: "core" | "lead" | "member";
-  order: number;
   areaOfInterest?: string;
   contactNumber?: string;
   image?: string;
@@ -78,7 +77,6 @@ export default function TeamPage() {
     .sort((a, b) => coreRoleRank(a.role) - coreRoleRank(b.role));
   const leadMembers = members
     .filter((member) => member.group === "lead")
-    .sort((a, b) => a.order - b.order);
   const generalMembers = members.filter(
     (member) => member.group === "member" && member.name.trim().length > 0,
   );

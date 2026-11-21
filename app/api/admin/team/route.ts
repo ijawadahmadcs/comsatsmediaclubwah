@@ -4,7 +4,7 @@ import { requireApiStaff } from "@/lib/auth";
 import connectToDatabase from "@/lib/mongodb";
 import Application from "@/models/Application";
 import TeamMember from "@/models/TeamMember";
-import { ensureClubMemberIds } from "@/lib/teamMembers";
+import { compareClubMemberIds, ensureClubMemberIds } from "@/lib/teamMembers";
 
 /**
  * GET /api/admin/team — every team member with all fields (staff only), plus the accepted
@@ -17,7 +17,7 @@ export async function GET() {
     await connectToDatabase();
     await ensureClubMemberIds();
     const [members, acceptedApplications] = await Promise.all([
-      TeamMember.find().sort({ order: 1, createdAt: 1 }).lean(),
+      TeamMember.find().lean(),
       Application.find({ status: "Accepted" })
         .select("fullName registrationNumber department areaOfInterest")
         .sort({ createdAt: 1 })
@@ -37,7 +37,7 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      members: members.map((member) => {
+      members: [...members].sort((left, right) => compareClubMemberIds(left.clubMemberId, right.clubMemberId)).map((member) => {
         const applicationStatus = member.applicationId ? statusByApplication.get(member.applicationId.toString()) ?? "Deleted" : undefined;
         return {
           ...member,

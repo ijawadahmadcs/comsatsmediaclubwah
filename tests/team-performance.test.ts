@@ -1,7 +1,45 @@
 import { describe, expect, it } from "vitest";
 import { buildTeamPerformanceRows } from "@/lib/teamPerformance";
+import { buildClubMemberIdOrder } from "@/lib/teamMembers";
+import mongoose from "mongoose";
 
 describe("team performance ranking", () => {
+  it("assigns IDs by hierarchy and skips advisors", () => {
+    const member = (name: string, role: string) => ({
+      _id: new mongoose.Types.ObjectId(),
+      name,
+      role,
+      createdAt: new Date("2026-01-01"),
+    });
+    const members = [
+      member("Regular One", "General Member"),
+      member("Advisor", "Faculty Advisor"),
+      member("Photography Lead", "Photography Lead"),
+      member("President", "President"),
+      member("Vice President", "Vice President"),
+      member("General Secretary", "General Secretary"),
+      member("Treasurer", "Treasurer"),
+      member("Media Secretary", "Media/Communications Secretary"),
+      member("Videography Lead", "Videography Lead"),
+      member("Regular Two", "General Member"),
+    ];
+
+    const { ordered, advisors } = buildClubMemberIdOrder(members);
+
+    expect(ordered.slice(0, 5).map((item) => item.name)).toEqual([
+      "President",
+      "Vice President",
+      "General Secretary",
+      "Treasurer",
+      "Media Secretary",
+    ]);
+    expect(ordered.slice(5, 7).map((item) => item.name)).toEqual([
+      "Photography Lead",
+      "Videography Lead",
+    ]);
+    expect(advisors.map((item) => item.name)).toEqual(["Advisor"]);
+  });
+
   it("ranks members by attendance and star rating, best first", () => {
     const members = [
       { _id: { toString: () => "1" }, name: "Ayesha", role: "Member" },

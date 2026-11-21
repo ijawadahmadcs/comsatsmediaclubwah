@@ -10,7 +10,6 @@ import { checkUploadFile, uploadDirectToCloudinary } from "@/lib/directUpload";
 type FormValues = {
   name: string;
   role: string;
-  clubMemberId?: string;
   department?: string;
   registrationNumber?: string;
   contactNumber?: string;
@@ -21,12 +20,11 @@ type FormValues = {
   instagram?: string;
   facebook?: string;
   linkedin?: string;
-  order?: number;
 };
 
 type TeamMember = FormValues & {
   _id: string;
-  order: number;
+  clubMemberId?: string;
   // Status of the application the member was created from, if any.
   applicationStatus?: string;
   // False when the member's application is no longer Accepted: hidden from the public site.
@@ -42,8 +40,8 @@ type AcceptedApplicant = {
 };
 
 function pickFormValues(member: TeamMember): FormValues {
-  const { name, role, clubMemberId, department, registrationNumber, contactNumber, semester, areaOfInterest, bio, image, instagram, facebook, linkedin, order } = member;
-  return { name, role, clubMemberId, department, registrationNumber, contactNumber, semester, areaOfInterest, bio, image, instagram, facebook, linkedin, order };
+  const { name, role, department, registrationNumber, contactNumber, semester, areaOfInterest, bio, image, instagram, facebook, linkedin } = member;
+  return { name, role, department, registrationNumber, contactNumber, semester, areaOfInterest, bio, image, instagram, facebook, linkedin };
 }
 
 function MemberAvatar({ member }: { member: TeamMember }) {
@@ -73,7 +71,6 @@ function HiddenBadge({ member }: { member: TeamMember }) {
 const emptyForm: FormValues = {
   name: "",
   role: "",
-  clubMemberId: "",
   department: "",
   registrationNumber: "",
   contactNumber: "",
@@ -84,7 +81,6 @@ const emptyForm: FormValues = {
   instagram: "",
   facebook: "",
   linkedin: "",
-  order: 0,
 };
 
 const fields: {
@@ -95,13 +91,11 @@ const fields: {
 }[] = [
   { key: "name", label: "Name *" },
   { key: "role", label: "Role *" },
-  { key: "clubMemberId", label: "Club Member ID" },
   { key: "department", label: "Department" },
   { key: "registrationNumber", label: "Registration Number" },
   { key: "contactNumber", label: "Contact Number" },
   { key: "semester", label: "Semester", type: "number" },
   { key: "areaOfInterest", label: "Area of Interest" },
-  { key: "order", label: "Display Order", type: "number" },
   { key: "instagram", label: "Instagram URL" },
   { key: "facebook", label: "Facebook URL" },
   { key: "linkedin", label: "LinkedIn URL" },
@@ -178,7 +172,7 @@ export default function TeamManagementPage() {
     setForm((current) => ({
       ...current,
       [key]:
-        key === "semester" || key === "order"
+        key === "semester"
           ? value === ""
             ? undefined
             : Number(value)
@@ -214,7 +208,7 @@ export default function TeamManagementPage() {
         method: editingMember ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         // Send cleared numbers as "" (JSON drops undefined) so the server can clear them.
-        body: JSON.stringify({ ...form, semester: form.semester ?? "", order: form.order ?? "", image }),
+        body: JSON.stringify({ ...form, semester: form.semester ?? "", image }),
       });
       const result = await response.json();
       if (!response.ok || !result.success)
@@ -419,8 +413,8 @@ export default function TeamManagementPage() {
                         </p>
                       </div>
                     </div>
-                    <span className="text-xs text-white/35">
-                      #{member.order}
+                    <span className="rounded-md border border-cyan-300/20 bg-cyan-300/[0.07] px-2 py-1 text-xs font-semibold text-cyan-200">
+                      {member.clubMemberId || "No ID"}
                     </span>
                   </div>
                   <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-white/45">
@@ -463,7 +457,6 @@ export default function TeamManagementPage() {
                     <th className="pb-4 pr-5">Role</th>
                     <th className="pb-4 pr-5">Department</th>
                     <th className="pb-4 pr-5">Semester</th>
-                    <th className="pb-4 pr-5">Order</th>
                     <th className="pb-4 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -482,7 +475,7 @@ export default function TeamManagementPage() {
                           </span>
                         </div>
                       </td>
-                      <td className="py-5 pr-5 text-cyan-200/80">
+                      <td className="py-3 pr-3 text-white/60">
                         {member.clubMemberId || "-"}
                       </td>
                       <td className="py-5 pr-5 text-white/60">{member.role}</td>
@@ -491,9 +484,6 @@ export default function TeamManagementPage() {
                       </td>
                       <td className="py-5 pr-5 text-white/45">
                         {member.semester || "-"}
-                      </td>
-                      <td className="py-5 pr-5 text-white/45">
-                        {member.order}
                       </td>
                       <td className="py-5 text-right">
                         <div className="inline-flex gap-2">

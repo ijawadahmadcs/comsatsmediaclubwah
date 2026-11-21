@@ -132,9 +132,9 @@ describe("parseMemberInput", () => {
     expect(parseMemberInput({ name: " Ali ", role: "Member" }, "create")).toEqual({ set: { name: "Ali", role: "Member" }, unset: {} });
   });
 
-  it("clears emptied optional fields and resets a cleared display order to 0", () => {
-    expect(parseMemberInput({ bio: "", semester: "", order: "" }, "update")).toEqual({
-      set: { order: 0 },
+  it("clears emptied optional fields", () => {
+    expect(parseMemberInput({ bio: "", semester: "" }, "update")).toEqual({
+      set: {},
       unset: { bio: "", semester: "" },
     });
   });
@@ -156,7 +156,6 @@ describe("parseMemberInput", () => {
 
   it.each([
     ["a semester outside 1-12", { semester: 13 }],
-    ["a fractional display order", { order: 1.5 }],
     ["a non-string field", { name: ["Ali"] }],
     ["an over-long field", { bio: "x".repeat(1001) }],
   ])("rejects %s", (_label, body) => {

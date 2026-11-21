@@ -7,6 +7,7 @@ export type TeamPerformanceRow = {
   memberId: string;
   name: string;
   registrationNumber: string;
+  clubMemberId: string;
   department: string;
   role: string;
   assignedEvents: number;
@@ -28,6 +29,7 @@ export function buildTeamPerformanceRows(
     _id: { toString(): string };
     name: string;
     registrationNumber?: string;
+    clubMemberId?: string;
     department?: string;
     role: string;
   }>,
@@ -76,6 +78,7 @@ export function buildTeamPerformanceRows(
       memberId,
       name: member.name,
       registrationNumber: member.registrationNumber || "-",
+      clubMemberId: member.clubMemberId || "-",
       department: member.department || "-",
       role: member.role,
       assignedEvents: current.assignedEvents,
@@ -109,7 +112,7 @@ export async function getTeamPerformance(team: string): Promise<TeamPerformanceR
 
   const [members, events] = await Promise.all([
     TeamMember.find({ _id: { $in: memberIds } })
-      .select("name registrationNumber department role")
+      .select("name registrationNumber clubMemberId department role")
       .lean(),
     Event.find({
       assignedMembers: { $in: memberIds },

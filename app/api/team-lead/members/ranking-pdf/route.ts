@@ -73,7 +73,7 @@ function buildPdf(team: string, rows: Awaited<ReturnType<typeof getTeamPerforman
     content.push("0.03 0.09 0.11 rg");
     content.push(`BT /F2 8 Tf 48 ${tableTop - 16} Td (RANK) Tj ET`);
     content.push(`BT /F2 8 Tf 108 ${tableTop - 16} Td (MEMBER) Tj ET`);
-    content.push(`BT /F2 8 Tf 328 ${tableTop - 16} Td (REGISTRATION) Tj ET`);
+    content.push(`BT /F2 8 Tf 328 ${tableTop - 16} Td (CLUB ID) Tj ET`);
     content.push(`BT /F2 8 Tf 458 ${tableTop - 16} Td (PRESENT) Tj ET`);
     content.push(`BT /F2 8 Tf 530 ${tableTop - 16} Td (ATTENDANCE) Tj ET`);
     content.push(`BT /F2 8 Tf 645 ${tableTop - 16} Td (STARS) Tj ET`);
@@ -100,7 +100,7 @@ function buildPdf(team: string, rows: Awaited<ReturnType<typeof getTeamPerforman
         content.push(`BT /F2 9 Tf 48 ${y} Td (${absoluteIndex + 1}) Tj ET`);
         content.push(`BT /F2 9 Tf 108 ${y} Td (${escapePdfText(truncate(row.name, 29))}) Tj ET`);
         content.push("0.72 0.79 0.80 rg");
-        content.push(`BT /F1 8 Tf 328 ${y} Td (${escapePdfText(truncate(row.registrationNumber, 16))}) Tj ET`);
+        content.push(`BT /F1 8 Tf 328 ${y} Td (${escapePdfText(truncate(row.clubMemberId, 16))}) Tj ET`);
         content.push(`BT /F1 8 Tf 458 ${y} Td (${row.attendedEvents}/${row.assignedEvents}) Tj ET`);
         content.push(`BT /F1 8 Tf 530 ${y} Td (${row.attendancePercent.toFixed(1)}%) Tj ET`);
         content.push("0.98 0.78 0.32 rg");

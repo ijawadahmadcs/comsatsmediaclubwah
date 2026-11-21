@@ -109,7 +109,6 @@ describe("toPublicMembers", () => {
       _id: new Types.ObjectId(),
       name: "Member",
       role: "Member",
-      order: 0,
       createdAt: new Date(),
       updatedAt: new Date(),
       ...fields,
@@ -121,7 +120,7 @@ describe("toPublicMembers", () => {
     ]);
     // What the API actually sends (JSON drops undefined fields).
     const [sent] = JSON.parse(JSON.stringify(published));
-    expect(Object.keys(sent).sort()).toEqual(["_id", "group", "name", "order", "role"]);
+    expect(Object.keys(sent).sort()).toEqual(["_id", "group", "name", "role"]);
   });
 
   it("publishes phone numbers for core office-bearers only", () => {

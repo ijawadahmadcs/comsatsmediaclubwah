@@ -30,6 +30,7 @@ type Profile = {
 type TeamMember = {
   _id: string;
   name: string;
+  clubMemberId?: string;
   registrationNumber?: string;
   department?: string;
   role?: string;
@@ -151,7 +152,7 @@ export default function TeamLeadDashboard() {
         ) : (
           <>
             <section className="mt-6 grid gap-3 sm:grid-cols-3">
-              <MetricCard label="Events on record" value={loading ? "--" : data?.totalEvents ?? 0} detail="Across your assigned team" icon={CalendarDays} accent="text-gray-300" />
+              <MetricCard label="Events on record" value={loading ? "--" : data?.totalEvents ?? 0} detail="Home and cross-team event work" icon={CalendarDays} accent="text-gray-300" />
               <MetricCard label="Average attendance" value={loading ? "--" : `${attendance.toFixed(1)}%`} detail="Presence across events" icon={CheckCircle2} accent="text-white" />
               <MetricCard label="Average rating" value={loading ? "--" : `${rating.toFixed(1)} / 5`} detail="Member performance score" icon={Star} accent="text-white" />
             </section>
@@ -200,7 +201,7 @@ export default function TeamLeadDashboard() {
                   {members.map((member) => (
                     <div key={member._id} className="flex items-center gap-3 rounded-xl border border-white/[0.08] bg-black/15 px-4 py-3">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-300/10 text-sm font-semibold text-gray-200">{member.name.charAt(0).toUpperCase()}</div>
-                      <div className="min-w-0"><p className="truncate text-sm text-white/85">{member.name}</p><p className="truncate text-xs text-white/35">{member.registrationNumber || member.role || "Team member"}</p><p className="truncate text-[10px] uppercase tracking-[0.12em] text-gray-200/50">{member.team || "Assigned member"}</p></div>
+                      <div className="min-w-0"><p className="truncate text-sm text-white/85">{member.name}</p><p className="truncate text-xs text-cyan-200/60">{member.clubMemberId || "ID pending"}</p><p className="truncate text-[11px] text-white/35">{member.registrationNumber || member.role || "Team member"}</p></div>
                     </div>
                   ))}
                 </div>

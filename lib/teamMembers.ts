@@ -1,7 +1,7 @@
 import type { Types } from "mongoose";
 import { isDuplicateKeyError } from "@/lib/api";
 import { isOwnCloudinaryImageUrl } from "@/lib/cloudinary";
-import { isCoreRole, isLeadRole } from "@/lib/teamRoles";
+import { isCoreRole, isLeadRole, coreRoleRank } from "@/lib/teamRoles";
 import Application, { type IApplication } from "@/models/Application";
 import Event from "@/models/Event";
 import TeamMember, { type ITeamMember } from "@/models/TeamMember";
@@ -12,32 +12,106 @@ import TeamMember, { type ITeamMember } from "@/models/TeamMember";
 export type MemberRecord = ITeamMember & { _id: Types.ObjectId };
 type ApplicationRecord = IApplication & { _id: Types.ObjectId };
 
+export function compareClubMemberIds(left?: string, right?: string) {
+  if (!left && !right) return 0;
+  if (!left) return 1;
+  if (!right) return -1;
+  const leftNumber = /^CMC-(\d+)$/i.exec(left)?.[1];
+  const rightNumber = /^CMC-(\d+)$/i.exec(right)?.[1];
+  if (leftNumber && rightNumber) return Number(leftNumber) - Number(rightNumber);
+  return left.localeCompare(right, undefined, { sensitivity: "base" });
+}
+
+const LEAD_TEAM_RANK = [
+  "Photography Lead",
+  "Videography Lead",
+  "Graphics Lead",
+  "Video Editing Lead",
+  "Content Creation Lead",
+] as const;
+
+export function buildClubMemberIdOrder(members: Array<{
+  _id: Types.ObjectId;
+  name: string;
+  role: string;
+  createdAt?: Date;
+  applicationId?: Types.ObjectId;
+  acceptedAt?: Date;
+}>) {
+  const normalizeRoleName = (role: string) => role.trim().toLowerCase().replace(/\s*\/\s*/g, "/");
+
+  const core = members
+    .filter((member) => isCoreRole(member.role) && !normalizeRoleName(member.role).includes("advisor"))
+    .sort((left, right) =>
+      coreRoleRank(left.role) - coreRoleRank(right.role) ||
+      (left.acceptedAt?.getTime() ?? left.createdAt?.getTime() ?? 0) - (right.acceptedAt?.getTime() ?? right.createdAt?.getTime() ?? 0) ||
+      left.name.localeCompare(right.name),
+    );
+
+  const leads = members
+    .filter((member) => isLeadRole(member.role) && !normalizeRoleName(member.role).includes("advisor"))
+    .sort((left, right) => {
+      const leftRank = LEAD_TEAM_RANK.findIndex((role) => normalizeRoleName(role).replace(/\s+/g, "") === normalizeRoleName(left.role).replace(/\s+/g, ""));
+      const rightRank = LEAD_TEAM_RANK.findIndex((role) => normalizeRoleName(role).replace(/\s+/g, "") === normalizeRoleName(right.role).replace(/\s+/g, ""));
+      return (leftRank === -1 ? 99 : leftRank) - (rightRank === -1 ? 99 : rightRank) ||
+        (left.acceptedAt?.getTime() ?? left.createdAt?.getTime() ?? 0) - (right.acceptedAt?.getTime() ?? right.createdAt?.getTime() ?? 0) ||
+        left.name.localeCompare(right.name);
+    });
+
+  const advisorsAndOthers = members.filter((member) =>
+    normalizeRoleName(member.role).includes("advisor"),
+  );
+
+  const remaining = members
+    .filter((member) =>
+      !isCoreRole(member.role) &&
+      !isLeadRole(member.role) &&
+      !normalizeRoleName(member.role).includes("advisor"),
+    )
+    .sort((left, right) =>
+      (left.acceptedAt?.getTime() ?? left.createdAt?.getTime() ?? 0) - (right.acceptedAt?.getTime() ?? right.createdAt?.getTime() ?? 0) ||
+      left.name.localeCompare(right.name),
+    );
+
+  return {
+    ordered: [...core, ...leads, ...remaining],
+    advisors: advisorsAndOthers,
+  };
+}
+
 export async function ensureClubMemberIds() {
-  const members = await TeamMember.find({
-    $or: [{ clubMemberId: { $exists: false } }, { clubMemberId: null }, { clubMemberId: "" }],
-  })
-    .sort({ order: 1, createdAt: 1, _id: 1 })
-    .select("_id")
+  const members = await TeamMember.find({})
+    .sort({ createdAt: 1, _id: 1 })
+    .select("_id name role createdAt applicationId")
     .lean();
   if (!members.length) return;
 
-  const highest = await TeamMember.find({
-    clubMemberId: { $regex: /^CMC-\d+$/i },
-  })
-    .sort({ clubMemberId: -1 })
-    .select("clubMemberId")
-    .lean();
-  let nextNumber = 0;
-  for (const member of highest) {
-    const match = /^CMC-(\d+)$/i.exec(member.clubMemberId || "");
-    if (match) nextNumber = Math.max(nextNumber, Number(match[1]));
+  const applicationIds = members.flatMap((member) => member.applicationId ? [member.applicationId] : []);
+  const applications = applicationIds.length
+    ? await Application.find({ _id: { $in: applicationIds } }).select("_id createdAt updatedAt status").lean()
+    : [];
+  const acceptedAtByApplication = new Map(
+    applications.map((application) => [
+      application._id.toString(),
+      application.status === "Accepted" ? application.updatedAt : application.createdAt,
+    ]),
+  );
+  const membersWithAcceptance = members.map((member) => ({
+    ...member,
+    acceptedAt: member.applicationId ? acceptedAtByApplication.get(member.applicationId.toString()) : member.createdAt,
+  }));
+  const { ordered, advisors } = buildClubMemberIdOrder(membersWithAcceptance);
+
+  await TeamMember.updateMany({}, { $unset: { clubMemberId: "" } });
+
+  for (const advisor of advisors) {
+    await TeamMember.updateOne({ _id: advisor._id }, { $unset: { clubMemberId: "" } });
   }
 
-  for (const member of members) {
-    nextNumber += 1;
+  for (const [index, member] of ordered.entries()) {
     await TeamMember.updateOne(
-      { _id: member._id, $or: [{ clubMemberId: { $exists: false } }, { clubMemberId: null }, { clubMemberId: "" }] },
-      { $set: { clubMemberId: `CMC-${String(nextNumber).padStart(3, "0")}` } },
+      { _id: member._id },
+      { $set: { clubMemberId: `CMC-${String(index + 1).padStart(3, "0")}` } },
     );
   }
 }
@@ -49,7 +123,6 @@ export type PublicMember = {
   name: string;
   role: string;
   group: PublicMemberGroup;
-  order: number;
   image?: string;
   areaOfInterest?: string;
   contactNumber?: string;
@@ -68,9 +141,11 @@ export function isMemberVisible(member: Pick<ITeamMember, "applicationId">, acce
 
 /** Members shown on the public site, in display order. */
 export async function findVisibleMembers(): Promise<MemberRecord[]> {
-  const members = await TeamMember.find().sort({ order: 1, createdAt: 1 }).lean();
+  const members = await TeamMember.find().lean();
   const acceptedIds = await getAcceptedApplicationIds(members.flatMap((member) => (member.applicationId ? [member.applicationId] : [])));
-  return members.filter((member) => isMemberVisible(member, acceptedIds));
+  return members
+    .filter((member) => isMemberVisible(member, acceptedIds))
+    .sort((left, right) => compareClubMemberIds(left.clubMemberId, right.clubMemberId));
 }
 
 /**
@@ -93,7 +168,6 @@ export function toPublicMembers(members: MemberRecord[]): PublicMember[] {
       name: member.name,
       role: member.role,
       group,
-      order: member.order ?? 0,
       image: isOwnCloudinaryImageUrl(member.image) ? member.image : undefined,
       areaOfInterest: member.areaOfInterest || undefined,
       contactNumber: group === "core" ? member.contactNumber || undefined : undefined,
@@ -126,7 +200,6 @@ export async function linkMemberToApplication(application: ApplicationRecord): P
     return claimed ? { status: "linked", member: claimed } : { status: "conflict", member: sameRegistration };
   }
 
-  const lastMember = await TeamMember.findOne().sort({ order: -1 }).select("order").lean();
   try {
     const member = await TeamMember.create({
       applicationId: application._id,
@@ -139,7 +212,6 @@ export async function linkMemberToApplication(application: ApplicationRecord): P
       semester: Number(application.semester) || undefined,
       areaOfInterest: application.areaOfInterest,
       image: isOwnCloudinaryImageUrl(application.image) ? application.image : undefined,
-      order: (lastMember?.order ?? 0) + 1,
     });
     await ensureClubMemberIds();
     const completeMember = await TeamMember.findById(member._id).lean();

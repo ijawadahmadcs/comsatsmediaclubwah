@@ -2,12 +2,16 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { RefreshCw, Users } from "lucide-react";
 
 type Stats = {
   totalTeamMembers: number;
   totalApplications: number;
   pendingApplications: number;
   acceptedApplications: number;
+  totalEvents: number;
+  crossTeamAssignments: number;
+  teamCounts: { team: string; count: number }[];
   recentApplications: {
     _id: string;
     fullName: string;
@@ -36,20 +40,24 @@ export default function AdminDashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [recognition, setRecognition] = useState<RecognitionState | null>(null);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  async function loadStats() {
+    setLoading(true);
+    setError("");
+    try {
+      const response = await fetch("/api/admin/stats");
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message);
+      setStats(result);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Unable to load dashboard.");
+      setLoading(false);
+    }
+  }
   useEffect(() => {
-    fetch("/api/admin/stats")
-      .then(async (response) => {
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.message);
-        setStats(result);
-      })
-      .catch((loadError) =>
-        setError(
-          loadError instanceof Error
-            ? loadError.message
-            : "Unable to load dashboard.",
-        ),
-      );
+    const timer = window.setTimeout(() => void loadStats(), 0);
+    return () => window.clearTimeout(timer);
   }, []);
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -84,21 +92,24 @@ export default function AdminDashboardPage() {
         ["Total Applications", stats.totalApplications],
         ["Pending Applications", stats.pendingApplications],
         ["Accepted Applications", stats.acceptedApplications],
+        ["Club Events", stats.totalEvents],
+        ["Cross-team Assignments", stats.crossTeamAssignments],
       ]
     : [];
   return (
     <main className="min-h-screen bg-[#08090b] px-4 py-16 text-white sm:px-8 lg:px-12">
       <div className="mx-auto max-w-7xl">
-        <p className="text-xs uppercase tracking-[0.3em] text-blue-300/60">
-          Overview
-        </p>
-        <h1 className="mt-4 text-3xl font-semibold tracking-tight">
-          Dashboard
-        </h1>
-        <p className="mt-3 text-sm text-white/40">
-          A quiet view of the club behind the scenes.
-        </p>
-        <div className="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.3em] text-blue-300/60">Club overview</p>
+            <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">Admin Dashboard</h1>
+            <p className="mt-3 text-sm text-white/40">People, applications, events and cross-team activity.</p>
+          </div>
+          <button type="button" onClick={() => void loadStats()} disabled={loading} className="inline-flex w-fit items-center gap-2 rounded-xl border border-white/10 px-4 py-3 text-sm text-white/60 transition hover:border-white/25 hover:text-white disabled:opacity-50">
+            <RefreshCw size={16} className={loading ? "animate-spin" : ""} /> Refresh
+          </button>
+        </div>
+        <div className="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {cards.length ? (
             cards.map(([label, value]) => (
               <div
@@ -117,6 +128,27 @@ export default function AdminDashboardPage() {
             </div>
           )}
         </div>
+        {stats?.teamCounts.length ? (
+          <section className="mt-7 rounded-2xl border border-white/10 bg-[#0b0d10] p-5 sm:p-6">
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-blue-300/60">Team distribution</p>
+                <h2 className="mt-2 text-lg font-medium">Members by team</h2>
+              </div>
+              <Users size={20} className="text-white/25" />
+            </div>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {stats.teamCounts.map((team) => (
+                <div key={team.team} className="rounded-xl border border-white/[0.08] bg-black/15 px-4 py-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="truncate text-sm text-white/65">{team.team}</p>
+                    <p className="text-lg font-semibold text-white">{team.count}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
         <section className="mt-7 rounded-2xl border border-amber-200/15 bg-amber-200/[0.04] p-5">
           <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-end"><div><p className="text-xs uppercase tracking-[0.2em] text-amber-200/60">Recognition</p><h2 className="mt-2 text-xl font-medium">Current member highlights</h2></div><p className="text-xs text-white/35">Calculated from the latest 7 and 30 days</p></div>
           <div className="mt-5 grid gap-3 sm:grid-cols-2"><AdminRecognitionCard label="Member of the week" winner={recognition?.week} revealed={recognition?.revealWeek ?? false} onToggle={() => void setRecognitionVisibility("week")} /><AdminRecognitionCard label="Member of the month" winner={recognition?.month} revealed={recognition?.revealMonth ?? false} onToggle={() => void setRecognitionVisibility("month")} /></div>

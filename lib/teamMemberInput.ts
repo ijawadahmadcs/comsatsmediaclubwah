@@ -3,7 +3,6 @@ import type { ITeamMember } from "@/models/TeamMember";
 const STRING_FIELDS = {
   name: 100,
   role: 100,
-  clubMemberId: 20,
   department: 100,
   registrationNumber: 40,
   contactNumber: 20,
@@ -15,7 +14,7 @@ const STRING_FIELDS = {
   linkedin: 300,
 } as const;
 
-const NUMBER_FIELDS = ["semester", "order"] as const;
+const NUMBER_FIELDS = ["semester"] as const;
 const LINK_FIELDS = new Set(["instagram", "facebook", "linkedin"]);
 
 type MemberField = keyof typeof STRING_FIELDS | (typeof NUMBER_FIELDS)[number];
@@ -32,17 +31,6 @@ export type MemberChanges = {
 export function parseMemberInput(body: Record<string, unknown>, mode: "create" | "update"): MemberChanges | { error: string } {
   const set: Record<string, unknown> = {};
   const unset: Record<string, ""> = {};
-
-  if (body.clubMemberId !== undefined) {
-    if (typeof body.clubMemberId !== "string") return { error: "Invalid club member ID." };
-    const clubMemberId = body.clubMemberId.trim().toUpperCase();
-    if (clubMemberId) {
-      if (!/^CMC-\d{3,}$/i.test(clubMemberId)) return { error: "Club member ID must look like CMC-001." };
-      set.clubMemberId = clubMemberId;
-    } else if (mode === "update") {
-      unset.clubMemberId = "";
-    }
-  }
 
   for (const [field, limit] of Object.entries(STRING_FIELDS)) {
     const value = body[field];
@@ -62,16 +50,12 @@ export function parseMemberInput(body: Record<string, unknown>, mode: "create" |
     const value = body[field];
     if (value === undefined) continue;
     if (value === "" || value === null) {
-      // A cleared display order goes back to the default (0) so sorting keeps working.
-      if (mode === "update") {
-        if (field === "order") set.order = 0;
-        else unset[field] = "";
-      }
+      if (mode === "update") unset[field] = "";
       continue;
     }
     const number = Number(value);
     if (!Number.isInteger(number) || (field === "semester" && (number < 1 || number > 12))) {
-      return { error: field === "semester" ? "Semester must be a whole number from 1 to 12." : "Display order must be a whole number." };
+      return { error: "Semester must be a whole number from 1 to 12." };
     }
     set[field] = number;
   }
