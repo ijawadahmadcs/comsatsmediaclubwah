@@ -22,7 +22,7 @@ function truncate(value: string, maxLength: number) {
 function buildPdf(team: string, rows: Awaited<ReturnType<typeof getTeamPerformance>>) {
   const pageWidth = 842;
   const pageHeight = 595;
-  const rowsPerPage = 14;
+  const rowsPerPage = 18;
   const pageRows = rows.length ? Array.from({ length: Math.ceil(rows.length / rowsPerPage) }, (_, pageIndex) =>
     rows.slice(pageIndex * rowsPerPage, (pageIndex + 1) * rowsPerPage),
   ) : [[]];
