@@ -22,68 +22,134 @@ function truncate(value: string, maxLength: number) {
 function buildPdf(team: string, rows: Awaited<ReturnType<typeof getTeamPerformance>>) {
   const pageWidth = 842;
   const pageHeight = 595;
-  const margin = 36;
-  const content: string[] = [];
+  const rowsPerPage = 14;
+  const pageRows = rows.length ? Array.from({ length: Math.ceil(rows.length / rowsPerPage) }, (_, pageIndex) =>
+    rows.slice(pageIndex * rowsPerPage, (pageIndex + 1) * rowsPerPage),
+  ) : [[]];
+  const generatedDate = new Date().toISOString().slice(0, 10);
+  const totalScore = rows.length
+    ? rows.reduce((sum, row) => sum + row.score, 0) / rows.length
+    : 0;
+  const topMember = rows[0];
+  const streams: string[] = [];
 
-  content.push("0.1 w");
-  content.push(`BT /F2 18 Tf ${margin} 545 Td (${escapePdfText(`${team} - Member Performance Ranking`)}) Tj ET`);
-  content.push(`BT /F1 9 Tf ${margin} 528 Td (${escapePdfText(`Generated ${new Date().toISOString().slice(0, 10)} | Highest performance first`)}) Tj ET`);
-  content.push(`BT /F1 8 Tf ${margin} 514 Td (${escapePdfText("Score combines attendance rate (60%) and average star rating (40%).")}) Tj ET`);
+  pageRows.forEach((currentRows, pageIndex) => {
+    const content: string[] = [];
 
-  content.push("0.7 0.7 0.7 RG");
-  content.push("0.7 0.7 0.7 rg");
-  content.push(`50 505 790 18 re f`);
-  content.push(`BT /F2 8 Tf 56 510 Td (Rank) Tj ET`);
-  content.push(`BT /F2 8 Tf 90 510 Td (Member) Tj ET`);
-  content.push(`BT /F2 8 Tf 310 510 Td (Registration) Tj ET`);
-  content.push(`BT /F2 8 Tf 405 510 Td (Present) Tj ET`);
-  content.push(`BT /F2 8 Tf 470 510 Td (Attendance) Tj ET`);
-  content.push(`BT /F2 8 Tf 555 510 Td (Stars) Tj ET`);
-  content.push(`BT /F2 8 Tf 620 510 Td (Score) Tj ET`);
+    content.push("0.035 0.06 0.075 rg");
+    content.push(`0 0 ${pageWidth} ${pageHeight} re f`);
+    content.push("0.09 0.16 0.18 rg");
+    content.push(`0 458 ${pageWidth} 137 re f`);
+    content.push("0.10 0.78 0.74 rg");
+    content.push(`36 553 58 5 re f`);
+    content.push(`BT /F2 10 Tf 36 532 Td (${escapePdfText("COMSATS MEDIA CLUB WAH")}) Tj ET`);
+    content.push(`BT /F2 24 Tf 36 497 Td (${escapePdfText(truncate(`${team} Performance`, 34))}) Tj ET`);
+    content.push(`BT /F1 9 Tf 36 476 Td (${escapePdfText(`Member ranking report  |  ${generatedDate}  |  Page ${pageIndex + 1} of ${pageRows.length}`)}) Tj ET`);
 
-  let y = 480;
-  if (!rows.length) {
-    content.push(`BT /F1 10 Tf ${margin} ${y} Td (No approved team members or performance records are available.) Tj ET`);
-  } else {
-    rows.forEach((row, index) => {
-      if (y < 55) return;
-      content.push(`BT /F1 8 Tf 56 ${y} Td (${index + 1}) Tj ET`);
-      content.push(`BT /F1 8 Tf 90 ${y} Td (${escapePdfText(truncate(row.name, 34))}) Tj ET`);
-      content.push(`BT /F1 8 Tf 310 ${y} Td (${escapePdfText(truncate(row.registrationNumber, 16))}) Tj ET`);
-      content.push(`BT /F1 8 Tf 405 ${y} Td (${row.attendedEvents}/${row.assignedEvents}) Tj ET`);
-      content.push(`BT /F1 8 Tf 470 ${y} Td (${row.attendancePercent.toFixed(1)}%) Tj ET`);
-      content.push(`BT /F1 8 Tf 555 ${y} Td (${row.averageRating.toFixed(2)} / 5) Tj ET`);
-      content.push(`BT /F2 8 Tf 620 ${y} Td (${row.score.toFixed(2)}) Tj ET`);
-      content.push(`0.85 0.85 0.85 RG 50 ${y - 7} m 790 ${y - 7} l S`);
-      y -= 24;
-    });
-  }
+    if (pageIndex === 0) {
+      content.push("0.10 0.78 0.74 rg");
+      content.push(`620 515 186 42 re f`);
+      content.push("0.03 0.09 0.11 rg");
+      content.push(`BT /F1 7 Tf 632 542 Td (TOP MEMBER) Tj ET`);
+      content.push(`BT /F2 11 Tf 632 525 Td (${escapePdfText(truncate(topMember?.name || "No records", 21))}) Tj ET`);
 
-  content.push(`BT /F1 7 Tf ${margin} 28 Td (${escapePdfText("COMSATS Media Club Wah - Team Lead performance report")}) Tj ET`);
+      content.push("0.08 0.14 0.16 rg");
+      content.push(`36 438 242 32 re f`);
+      content.push(`250 438 242 32 re f`);
+      content.push(`464 438 242 32 re f`);
+      content.push("0.55 0.62 0.64 rg");
+      content.push(`BT /F1 7 Tf 48 454 Td (MEMBERS) Tj ET`);
+      content.push(`BT /F1 7 Tf 262 454 Td (TEAM SCORE) Tj ET`);
+      content.push(`BT /F1 7 Tf 476 454 Td (RANKING BASIS) Tj ET`);
+      content.push("0.95 0.97 0.97 rg");
+      content.push(`BT /F2 11 Tf 48 442 Td (${rows.length}) Tj ET`);
+      content.push(`BT /F2 11 Tf 262 442 Td (${totalScore.toFixed(1)} / 100) Tj ET`);
+      content.push(`BT /F2 11 Tf 476 442 Td (60% attendance + 40% stars) Tj ET`);
+    }
 
-  const stream = content.join("\n");
-  const objects = [
-    "<< /Type /Catalog /Pages 2 0 R >>",
-    `<< /Type /Pages /Kids [3 0 R] /Count 1 >>`,
-    `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>`,
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>",
-    `<< /Length ${Buffer.byteLength(stream, "ascii")} >>\nstream\n${stream}\nendstream`,
-  ];
+    const tableTop = pageIndex === 0 ? 416 : 438;
+    content.push("0.10 0.78 0.74 rg");
+    content.push(`36 ${tableTop - 25} 770 25 re f`);
+    content.push("0.03 0.09 0.11 rg");
+    content.push(`BT /F2 8 Tf 48 ${tableTop - 16} Td (RANK) Tj ET`);
+    content.push(`BT /F2 8 Tf 108 ${tableTop - 16} Td (MEMBER) Tj ET`);
+    content.push(`BT /F2 8 Tf 328 ${tableTop - 16} Td (REGISTRATION) Tj ET`);
+    content.push(`BT /F2 8 Tf 458 ${tableTop - 16} Td (PRESENT) Tj ET`);
+    content.push(`BT /F2 8 Tf 530 ${tableTop - 16} Td (ATTENDANCE) Tj ET`);
+    content.push(`BT /F2 8 Tf 645 ${tableTop - 16} Td (STARS) Tj ET`);
+    content.push(`BT /F2 8 Tf 728 ${tableTop - 16} Td (SCORE) Tj ET`);
+
+    let y = tableTop - 49;
+    if (!rows.length) {
+      content.push("0.08 0.14 0.16 rg");
+      content.push(`36 ${y - 18} 770 42 re f`);
+      content.push("0.65 0.72 0.73 rg");
+      content.push(`BT /F1 10 Tf 48 ${y} Td (No approved team members or performance records are available.) Tj ET`);
+    } else {
+      currentRows.forEach((row, rowIndex) => {
+        const absoluteIndex = pageIndex * rowsPerPage + rowIndex;
+        const rowHeight = 20;
+        content.push(absoluteIndex % 2 === 0 ? "0.08 0.14 0.16 rg" : "0.06 0.11 0.13 rg");
+        content.push(`36 ${y - 5} 770 ${rowHeight} re f`);
+        if (absoluteIndex < 3) {
+          content.push("0.10 0.78 0.74 rg");
+          content.push(`36 ${y - 5} 4 ${rowHeight} re f`);
+        }
+
+        content.push("0.95 0.97 0.97 rg");
+        content.push(`BT /F2 9 Tf 48 ${y} Td (${absoluteIndex + 1}) Tj ET`);
+        content.push(`BT /F2 9 Tf 108 ${y} Td (${escapePdfText(truncate(row.name, 29))}) Tj ET`);
+        content.push("0.72 0.79 0.80 rg");
+        content.push(`BT /F1 8 Tf 328 ${y} Td (${escapePdfText(truncate(row.registrationNumber, 16))}) Tj ET`);
+        content.push(`BT /F1 8 Tf 458 ${y} Td (${row.attendedEvents}/${row.assignedEvents}) Tj ET`);
+        content.push(`BT /F1 8 Tf 530 ${y} Td (${row.attendancePercent.toFixed(1)}%) Tj ET`);
+        content.push("0.98 0.78 0.32 rg");
+        content.push(`BT /F2 9 Tf 645 ${y} Td (${row.averageRating.toFixed(2)} / 5) Tj ET`);
+        content.push("0.95 0.97 0.97 rg");
+        content.push(`BT /F2 9 Tf 728 ${y} Td (${row.score.toFixed(1)}) Tj ET`);
+        y -= rowHeight + 2;
+      });
+    }
+
+    content.push("0.55 0.62 0.64 rg");
+    content.push(`BT /F1 7 Tf 36 28 Td (CONFIDENTIAL  /  COMSATS MEDIA CLUB WAH  /  TEAM LEAD PERFORMANCE REPORT) Tj ET`);
+    content.push(`BT /F1 7 Tf 690 28 Td (${escapePdfText(`Generated ${generatedDate}`)}) Tj ET`);
+    streams.push(content.join("\n"));
+  });
+
+  const fontRegular = 3 + streams.length * 2;
+  const fontBold = fontRegular + 1;
+  const pageObjectNumbers = streams.map((_, index) => 3 + index * 2);
+  const pageReferences = pageObjectNumbers.map((pageObjectNumber) => `${pageObjectNumber} 0 R`).join(" ");
+  const objects: Array<string | undefined> = new Array(fontBold + 1);
+
+  objects[1] = "<< /Type /Catalog /Pages 2 0 R >>";
+  objects[2] = `<< /Type /Pages /Kids [${pageReferences}] /Count ${streams.length} >>`;
+
+  streams.forEach((stream, index) => {
+    const pageObjectNumber = pageObjectNumbers[index];
+    const contentObjectNumber = pageObjectNumber + 1;
+    objects[pageObjectNumber] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 ${fontRegular} 0 R /F2 ${fontBold} 0 R >> >> /Contents ${contentObjectNumber} 0 R >>`;
+    objects[contentObjectNumber] = `<< /Length ${Buffer.byteLength(stream, "ascii")} >>\nstream\n${stream}\nendstream`;
+  });
+
+  objects[fontRegular] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>";
+  objects[fontBold] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>";
 
   let pdf = "%PDF-1.4\n";
   const offsets = [0];
-  for (let index = 0; index < objects.length; index += 1) {
+  for (let index = 1; index < objects.length; index += 1) {
     offsets.push(Buffer.byteLength(pdf, "ascii"));
-    pdf += `${index + 1} 0 obj\n${objects[index]}\nendobj\n`;
+    if (!objects[index]) throw new Error(`Missing PDF object ${index}`);
+    pdf += `${index} 0 obj\n${objects[index]}\nendobj\n`;
   }
   const xrefOffset = Buffer.byteLength(pdf, "ascii");
-  pdf += `xref\n0 ${objects.length + 1}\n`;
+  pdf += `xref\n0 ${objects.length}\n`;
   pdf += "0000000000 65535 f \n";
   for (let index = 1; index < offsets.length; index += 1) {
     pdf += `${offsets[index].toString().padStart(10, "0")} 00000 n \n`;
   }
-  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+  pdf += `trailer\n<< /Size ${objects.length} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
   return Buffer.from(pdf, "ascii");
 }
 
