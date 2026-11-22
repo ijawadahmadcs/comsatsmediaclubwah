@@ -9,7 +9,7 @@ export default function Hero() {
   return (
     <section className="relative min-h-screen bg-[#08090b] px-3 pt-3 sm:px-5 sm:pt-5">
       {/* Hero Container */}
-      <div className="relative min-h-[calc(100vh-1.5rem)] sm:min-h-[calc(100vh-2.5rem)] overflow-hidden rounded-[2rem] border border-white/10">
+      <div className="relative min-h-[calc(100vh-1.5rem)] sm:min-h-[calc(100vh-2.5rem)] overflow-hidden rounded-[2rem] border border-white/[0.12]">
         
         {/* Background Image: next/image serves a resized WebP instead of the 1.5 MB PNG */}
         <Image
@@ -76,7 +76,7 @@ export default function Hero() {
             >
               <Link
                 href="/work"
-                className="group flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-all duration-300 hover:bg-white/90"
+                className="group flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black shadow-[0_12px_40px_rgba(255,255,255,.12)] transition-all duration-300 hover:bg-blue-100"
               >
                 Explore Our Work
 

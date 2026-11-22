@@ -4,6 +4,8 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { coreRoleRank } from "@/lib/teamRoles";
+import PublicPageHeader from "@/components/PublicPageHeader";
+import { Users } from "lucide-react";
 
 // Shape returned by the public GET /api/team (public fields only).
 type TeamMember = {
@@ -99,30 +101,15 @@ export default function TeamPage() {
 
   return (
     <main className="min-h-screen bg-[#08090b] px-3 py-3 text-white sm:px-5 sm:py-5">
-      <section className="rounded-[2rem] border border-white/10 bg-[#0b0d10] px-6 pb-16 pt-32 sm:px-10 lg:px-16 lg:pb-24 lg:pt-40">
+      <section className="px-3 pt-24 sm:px-5 sm:pt-28">
         <div className="mx-auto max-w-7xl">
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-xs uppercase tracking-[0.3em] text-white/40"
-          >
-            COMSATS Media Club · The Team
-          </motion.p>
-          <motion.h1
-            initial={{ opacity: 0, y: 35 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.1 }}
-            className="mt-6 max-w-6xl text-5xl font-semibold leading-[0.9] tracking-tight sm:text-7xl lg:text-8xl"
-          >
-            The people
-            <br />
-            <span className="text-white/30">behind the vision.</span>
-          </motion.h1>
-          <p className="mt-10 max-w-2xl text-base leading-8 text-white/45 sm:text-lg">
-            Meet the people creating, communicating, and shaping the visual
-            identity of COMSATS.
-          </p>
+          <PublicPageHeader
+            eyebrow="COMSATS Media Club · The Team"
+            title="The people"
+            highlightedTitle="behind the vision."
+            description="Meet the creators, designers, photographers, editors, and leaders shaping our campus story."
+            icon={Users}
+          />
         </div>
       </section>
 

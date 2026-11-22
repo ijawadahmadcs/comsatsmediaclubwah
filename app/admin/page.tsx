@@ -12,6 +12,7 @@ import {
   UserPlus,
   Users,
 } from "lucide-react";
+import PortalSnowfall from "@/components/PortalSnowfall";
 
 type Stats = {
   totalTeamMembers: number;
@@ -114,6 +115,7 @@ export default function AdminDashboardPage() {
     : [];
   return (
     <main className="min-h-screen bg-[#08090b] px-4 py-16 text-white sm:px-8 lg:px-12">
+      <PortalSnowfall />
       <div className="mx-auto max-w-7xl">
         <div className="relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#10161a] p-6 sm:p-8">
           <div className="pointer-events-none absolute inset-0 opacity-25 [background-image:linear-gradient(rgba(255,255,255,.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.05)_1px,transparent_1px)] [background-size:32px_32px]" />

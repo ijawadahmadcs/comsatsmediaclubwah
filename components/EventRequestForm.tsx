@@ -85,8 +85,8 @@ export default function EventRequestForm() {
   }
 
   return (
-    <section id="request-coverage" className="my-6 px-4 sm:px-6">
-      <div className="rounded-[2rem]  border border-blue-200/10 bg-[#0b0d10] px-6 py-12 sm:px-10 lg:px-16 lg:py-16">
+    <section id="request-coverage" className="mt-5">
+      <div className="rounded-[1.75rem] border border-white/[0.08] bg-[#0b0d10] px-6 py-12 sm:px-10 lg:px-16 lg:py-16">
         <p className="text-xs uppercase tracking-[0.3em] text-blue-200/60">
           Event coverage
         </p>

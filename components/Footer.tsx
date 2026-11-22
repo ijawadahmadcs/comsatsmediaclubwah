@@ -31,8 +31,8 @@ const socials = [
 
 export default function Footer() {
   return (
-    <footer className="bg-[#08090b] px-3 pb-3 sm:px-5 sm:pb-5">
-      <div className="relative overflow-hidden rounded-[1.5rem] border border-white/10 bg-[#0d0f12] sm:rounded-[2rem]">
+    <footer className="bg-[#08090b] px-3 pb-3 pt-6 sm:px-5 sm:pb-5 sm:pt-8">
+      <div className="relative overflow-hidden rounded-[1.5rem] border border-white/[0.08] bg-[linear-gradient(145deg,#10161a,#0d0f12)] sm:rounded-[2rem]">
 
         {/* Background glows */}
         <div className="pointer-events-none absolute -right-32 -top-32 h-72 w-72 rounded-full bg-black-500/10 blur-3xl sm:h-80 sm:w-80" />

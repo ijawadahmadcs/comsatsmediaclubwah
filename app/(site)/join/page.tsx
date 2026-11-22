@@ -11,6 +11,8 @@ import {
   APPLICATION_INTERESTS,
 } from "@/lib/applicationRules";
 import { resizeImageFile } from "@/lib/resizeImage";
+import PublicPageHeader from "@/components/PublicPageHeader";
+import { Sparkles } from "lucide-react";
 
 const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 // Photos are shrunk in the browser before upload, so larger originals are fine here.
@@ -143,10 +145,17 @@ export default function JoinPage() {
   return (
     <>
       {/* APPLICATION FORM */}
-      <section
-        id="application"
-        className="mt-4 sm:mt-0 p-5"
-      >
+      <section id="application" className="px-3 pt-24 sm:px-5 sm:pt-28">
+        <div className="mx-auto max-w-7xl">
+          <PublicPageHeader
+            eyebrow="Membership application"
+            title="Create. Cover."
+            highlightedTitle="Connect."
+            description="Join a community of student creators at COMSATS Wah Campus."
+            icon={Sparkles}
+          />
+        </div>
+        <div className="mx-auto mt-5 max-w-7xl">
         <div className="rounded-[2rem] border border-white/10 bg-[#0b0d10] px-6 py-16 sm:px-10 lg:px-16 lg:py-24">
 
           <div className="max-w-3xl">
@@ -453,6 +462,7 @@ export default function JoinPage() {
 
           </form>
 
+        </div>
         </div>
       </section>
 

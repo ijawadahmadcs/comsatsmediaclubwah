@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Maximize2, X } from "lucide-react";
+import PublicPageHeader from "@/components/PublicPageHeader";
+import { Aperture } from "lucide-react";
 
 const localGallery = [
   "/work/work-2.jpeg",
@@ -75,17 +77,21 @@ export default function WorkPage() {
 
   return (
     <main className="min-h-screen bg-[#08090b] px-3 py-3 text-white sm:px-5 sm:py-5">
-      <section className="overflow-hidden rounded-[2rem] border border-white/10 bg-[#0b0d10] px-4 pb-5 pt-28 sm:px-6 sm:pt-32 lg:px-8 lg:pt-36">
+      <section className="overflow-hidden px-3 pt-24 sm:px-5 sm:pt-28 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <motion.div initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="mb-8 flex items-end justify-between gap-4 px-2 sm:mb-10 sm:px-4">
-            <div>
-                <p className="text-sm text-white/50"> Explore our collection of artistic works</p>
-              <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-6xl lg:text-7xl">Art Gallery</h1>
-            </div>
-            {/* <p className="pb-1 text-xs uppercase tracking-[0.2em] text-white/25">{gallery.length} frames</p> */}
-          </motion.div>
+          <PublicPageHeader
+            eyebrow="Our portfolio"
+            title="Stories through"
+            highlightedTitle="every frame."
+            description="Photography, videography, design, and campus stories created by the COMSATS Media Club."
+            icon={Aperture}
+          />
+          <div className="mt-6 flex items-center justify-between rounded-2xl border border-white/[0.08] bg-[#0b0d10] px-5 py-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-white/35">Featured work</p>
+            <p className="text-xs text-white/35">{gallery.length} frames</p>
+          </div>
 
-          <div className="columns-1 gap-3 sm:columns-2 lg:columns-3">
+          <div className="mt-6 columns-1 gap-3 sm:columns-2 lg:columns-3">
             {gallery.map((asset, index) => (
               <motion.button key={asset._id || asset.url} type="button" initial={{ opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.12 }} transition={{ duration: 0.55, delay: (index % 3) * 0.06 }} onClick={() => setSelectedIndex(index)} className="group relative mb-3 block w-full break-inside-avoid overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] text-left focus:outline-none focus:ring-2 focus:ring-white/60" aria-label={`Open work ${index + 1}`}>
                 {asset.resourceType === "video" ? <video src={asset.url} muted playsInline loop autoPlay className="block h-auto max-h-[70vh] w-full object-cover transition duration-700 ease-out group-hover:scale-[1.04]" /> : <Image src={asset.url} alt="COMSATS Media Club work" width={0} height={0} sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" unoptimized={!asset.url.startsWith("/")} style={{ width: "100%", height: "auto" }} className="block transition duration-700 ease-out group-hover:scale-[1.04]" />}
