@@ -6,7 +6,6 @@ import {
   Check,
   CheckCircle2,
   Clock3,
-  Save,
   Star,
   UserPlus,
   Users,
@@ -49,8 +48,6 @@ export default function EventDetail() {
   const [error, setError] = useState("");
   const [attendanceSet, setAttendanceSet] = useState<Set<string>>(new Set());
   const [ratingData, setRatingData] = useState<{ memberId: string; rating: number; remark?: string } | null>(null);
-  const [savingAttendance, setSavingAttendance] = useState(false);
-  const [savingRating, setSavingRating] = useState(false);
   const [temporaryClubId, setTemporaryClubId] = useState("");
   const [addingTemporary, setAddingTemporary] = useState(false);
 
@@ -103,47 +100,46 @@ export default function EventDetail() {
       const next = new Set(current);
       if (next.has(memberId)) next.delete(memberId);
       else next.add(memberId);
+      void submitAttendance(Array.from(next));
       return next;
     });
   }
 
-  async function submitAttendance() {
-    setSavingAttendance(true);
+  async function submitAttendance(memberIds: string[]) {
     setError("");
     try {
       const response = await fetch(`/api/team-lead/events/${id}?action=attendance`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ memberIds: Array.from(attendanceSet) }),
+        body: JSON.stringify({ memberIds }),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Unable to save attendance.");
       setEvent((current) => current ? { ...current, attendance: result.attendance } : current);
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Unable to save attendance.");
-    } finally {
-      setSavingAttendance(false);
     }
   }
 
-  async function submitRating() {
+  async function submitRating(rating: number) {
     if (!ratingData) return;
-    setSavingRating(true);
     setError("");
     try {
       const response = await fetch(`/api/team-lead/events/${id}?action=rating`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(ratingData),
+        body: JSON.stringify({ ...ratingData, rating }),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Unable to save rating.");
-      await loadEvent();
+      setEvent((current) => current ? {
+        ...current,
+        ratings: { ...current.ratings, [ratingData.memberId]: rating },
+        remarks: result.remark ? { ...current.remarks, [ratingData.memberId]: result.remark } : current.remarks,
+      } : current);
       setRatingData(null);
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Unable to save rating.");
-    } finally {
-      setSavingRating(false);
     }
   }
 
@@ -200,12 +196,12 @@ export default function EventDetail() {
         </section>
 
         <section className="mt-6 rounded-2xl border border-white/10 bg-[#0d1114] p-5 sm:p-7">
-          <div className="flex flex-col gap-3 border-b border-white/10 pb-5 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs uppercase tracking-[0.2em] text-white/35">Live checklist</p><h2 className="mt-2 text-xl font-medium">Member attendance and ratings</h2></div><button type="button" onClick={() => void submitAttendance()} disabled={savingAttendance} className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black disabled:opacity-50"><Save size={16} />{savingAttendance ? "Saving..." : "Save attendance"}</button></div>
+          <div className="border-b border-white/10 pb-5"><p className="text-xs uppercase tracking-[0.2em] text-white/35">Live checklist</p><h2 className="mt-2 text-xl font-medium">Member attendance and ratings</h2><p className="mt-2 text-xs text-white/40">Attendance and star ratings save automatically.</p></div>
           {event.assignedMembers.length ? <div className="mt-5 divide-y divide-white/[0.07]">{event.assignedMembers.map((member) => { const present = attendanceSet.has(member._id); const rating = event.ratings?.[member._id]; return <div key={member._id} className="flex flex-col gap-4 py-4 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-300/10 font-semibold text-cyan-200">{member.name.charAt(0).toUpperCase()}</div><div><p className="text-sm text-white/85">{member.name}</p><p className="mt-1 text-xs text-white/35">{member.clubMemberId || member.registrationNumber || "Team member"}</p></div></div><div className="flex items-center gap-3"><button type="button" onClick={() => toggleAttendance(member._id)} className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs transition ${present ? "border-emerald-300/30 bg-emerald-300/10 text-emerald-200" : "border-white/10 text-white/50 hover:bg-white/10"}`}><span className={`flex h-4 w-4 items-center justify-center rounded border ${present ? "border-emerald-300 bg-emerald-300 text-black" : "border-white/25"}`}>{present && <Check size={11} />}</span>{present ? "Present" : "Not marked"}</button><button type="button" onClick={() => setRatingData({ memberId: member._id, rating: rating || 1, remark: event.remarks?.[member._id] || "" })} className="inline-flex items-center gap-2 rounded-xl border border-amber-300/20 px-3 py-2 text-xs text-amber-200/80 transition hover:bg-amber-300/10"><Star size={14} />{rating ? `${rating}/5` : "Rate"}</button></div></div>; })}</div> : <p className="py-10 text-center text-sm text-white/40">No members are assigned to this event.</p>}
         </section>
       </div>
 
-      {ratingData && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"><div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#11161a] p-6 shadow-2xl"><div className="flex items-start justify-between"><div><p className="text-xs uppercase tracking-[0.2em] text-amber-300/70">Performance note</p><h2 className="mt-2 text-xl font-semibold">Rate member</h2></div><button type="button" onClick={() => setRatingData(null)} aria-label="Close rating dialog" className="rounded-lg p-2 text-white/45 hover:bg-white/10 hover:text-white"><X size={18} /></button></div><div className="mt-6"><label className="text-sm text-white/65">Rating</label><div className="mt-3 flex gap-2">{[1, 2, 3, 4, 5].map((value) => <button key={value} type="button" onClick={() => setRatingData({ ...ratingData, rating: value })} aria-label={`Rate ${value} out of 5`} className={`flex h-10 w-10 items-center justify-center rounded-xl border transition ${ratingData.rating >= value ? "border-amber-300/40 bg-amber-300/15 text-amber-200" : "border-white/10 text-white/30 hover:bg-white/10"}`}><Star size={17} fill={ratingData.rating >= value ? "currentColor" : "none"} /></button>)}</div></div><label className="mt-6 block text-sm text-white/65">Remarks<textarea value={ratingData.remark || ""} onChange={(input) => setRatingData({ ...ratingData, remark: input.target.value })} maxLength={1000} rows={4} className="mt-2 w-full resize-y rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none focus:border-amber-300/40" /></label><div className="mt-6 flex justify-end gap-3 border-t border-white/10 pt-5"><button type="button" onClick={() => setRatingData(null)} className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 hover:bg-white/10">Cancel</button><button type="button" disabled={savingRating} onClick={() => void submitRating()} className="rounded-xl bg-white px-4 py-2.5 text-sm font-medium text-black disabled:opacity-50">{savingRating ? "Saving..." : "Save rating"}</button></div></div></div>}
+      {ratingData && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"><div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#11161a] p-6 shadow-2xl"><div className="flex items-start justify-between"><div><p className="text-xs uppercase tracking-[0.2em] text-amber-300/70">Performance note</p><h2 className="mt-2 text-xl font-semibold">Rate member</h2></div><button type="button" onClick={() => setRatingData(null)} aria-label="Close rating dialog" className="rounded-lg p-2 text-white/45 hover:bg-white/10 hover:text-white"><X size={18} /></button></div><div className="mt-6"><label className="text-sm text-white/65">Rating — saves automatically</label><div className="mt-3 flex gap-2">{[1, 2, 3, 4, 5].map((value) => <button key={value} type="button" onClick={() => void submitRating(value)} aria-label={`Rate ${value} out of 5`} className={`flex h-10 w-10 items-center justify-center rounded-xl border transition ${ratingData.rating >= value ? "border-amber-300/40 bg-amber-300/15 text-amber-200" : "border-white/10 text-white/30 hover:bg-white/10"}`}><Star size={17} fill={ratingData.rating >= value ? "currentColor" : "none"} /></button>)}</div></div><label className="mt-6 block text-sm text-white/65">Remarks (optional)<textarea value={ratingData.remark || ""} onChange={(input) => setRatingData({ ...ratingData, remark: input.target.value })} maxLength={1000} rows={4} className="mt-2 w-full resize-y rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none focus:border-amber-300/40" /></label><div className="mt-6 flex justify-end border-t border-white/10 pt-5"><button type="button" onClick={() => setRatingData(null)} className="rounded-xl border border-white/10 px-4 py-2.5 text-sm text-white/60 hover:bg-white/10">Close</button></div></div></div>}
     </main>
   );
 }
