@@ -4,7 +4,8 @@ import { FormEvent, useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Download, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Download, Pencil, Plus, Trash2, Users, X } from "lucide-react";
+import AdminPageHeader from "@/components/AdminPageHeader";
 import { checkUploadFile, uploadDirectToCloudinary } from "@/lib/directUpload";
 
 type FormValues = {
@@ -328,19 +329,13 @@ export default function TeamManagementPage() {
   return (
     <main className="min-h-screen bg-[#08090b] px-3 py-16 text-white sm:px-5">
       <section className="mx-auto max-w-7xl rounded-[2rem] border border-white/10 bg-[#0b0d10] px-6 py-10 sm:px-10 lg:px-16">
-        <div className="flex flex-col justify-between gap-6 border-b border-white/10 pb-8 sm:flex-row sm:items-end">
-          <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-blue-300/60">
-              Admin · People
-            </p>
-            <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">
-              Team Management
-            </h1>
-            <p className="mt-3 text-sm text-white/40">
-              Manage the people behind the vision.
-            </p>
-          </div>
-          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+        <AdminPageHeader
+          eyebrow="Admin · People"
+          title="Team Management"
+          description="Manage club members, CMC IDs, roles, and cross-team membership."
+          icon={Users}
+          actions={
+            <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
             <button
               type="button"
               onClick={() => void downloadTeamPdf()}
@@ -357,8 +352,17 @@ export default function TeamManagementPage() {
             >
               <Plus size={16} /> Add Member
             </button>
+            </div>
+          }
+        />
+
+        {!isLoading && (
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border border-white/[0.08] bg-[#0b0d10] px-4 py-3"><p className="text-[10px] uppercase tracking-[0.16em] text-white/35">Total members</p><p className="mt-2 text-2xl font-semibold">{members.length}</p></div>
+            <div className="rounded-xl border border-white/[0.08] bg-[#0b0d10] px-4 py-3"><p className="text-[10px] uppercase tracking-[0.16em] text-white/35">Core & leads</p><p className="mt-2 text-2xl font-semibold">{members.filter((member) => /lead|president|secretary|treasurer|advisor/i.test(member.role)).length}</p></div>
+            <div className="col-span-2 rounded-xl border border-cyan-300/15 bg-cyan-300/[0.04] px-4 py-3 sm:col-span-1"><p className="text-[10px] uppercase tracking-[0.16em] text-cyan-200/50">Accepted applicants</p><p className="mt-2 text-2xl font-semibold text-cyan-100">{acceptedApplicants.length}</p></div>
           </div>
-        </div>
+        )}
 
         <AnimatePresence mode="wait">
           {feedback.message && (
@@ -438,7 +442,7 @@ export default function TeamManagementPage() {
               {members.map((member) => (
                 <div
                   key={member._id}
-                  className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+                  className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 transition hover:border-white/20"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-3">
@@ -504,7 +508,7 @@ export default function TeamManagementPage() {
                   {members.map((member) => (
                     <tr
                       key={member._id}
-                      className="border-b border-white/[0.06] last:border-0"
+                      className="border-b border-white/[0.06] transition last:border-0 hover:bg-white/[0.025]"
                     >
                       <td className="py-5 pr-5">
                         <div className="flex items-center gap-3">

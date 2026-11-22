@@ -4,6 +4,8 @@ import { FormEvent, useEffect, useState } from "react";
 import PasswordDialog from "@/components/PasswordDialog";
 import { PASSWORD_MIN_LENGTH } from "@/lib/password";
 import { TEAM_LEAD_TEAMS } from "@/lib/teamScope";
+import AdminPageHeader from "@/components/AdminPageHeader";
+import { Users } from "lucide-react";
 
 type TeamLead = {
   _id: string;
@@ -115,12 +117,15 @@ export default function TeamLeadsPage() {
   return (
     <main className="min-h-screen bg-[#08090b] px-5 py-16 text-white sm:px-10 lg:px-16">
       <div className="mx-auto max-w-6xl">
-        <p className="text-xs uppercase tracking-[0.3em] text-blue-300/60">Superadmin · Access</p>
-        <h1 className="mt-4 text-4xl font-semibold">Team Lead Management</h1>
-        <p className="mt-3 text-sm text-white/40">Create credentials and assign each Team Lead to one team.</p>
+        <AdminPageHeader eyebrow="Superadmin · Access" title="Team Lead Management" description="Create credentials and assign each Team Lead to one team." icon={Users} />
         {message && <p className="mt-5 text-sm text-blue-200">{message}</p>}
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-white/[0.08] bg-[#0b0d10] px-4 py-3"><p className="text-[10px] uppercase tracking-[0.16em] text-white/35">Team Leads</p><p className="mt-2 text-2xl font-semibold">{teamLeads.length}</p></div>
+          <div className="rounded-xl border border-white/[0.08] bg-[#0b0d10] px-4 py-3"><p className="text-[10px] uppercase tracking-[0.16em] text-white/35">Active</p><p className="mt-2 text-2xl font-semibold text-emerald-200">{teamLeads.filter((lead) => lead.isActive).length}</p></div>
+          <div className="col-span-2 rounded-xl border border-white/[0.08] bg-[#0b0d10] px-4 py-3 sm:col-span-1"><p className="text-[10px] uppercase tracking-[0.16em] text-white/35">Assigned teams</p><p className="mt-2 text-2xl font-semibold text-cyan-200">{new Set(teamLeads.map((lead) => lead.team).filter(Boolean)).size}</p></div>
+        </div>
 
-        <form onSubmit={createTeamLead} className="mt-8 grid gap-4 rounded-2xl border border-white/10 bg-[#0b0d10] p-6 sm:grid-cols-2 lg:grid-cols-4">
+        <form onSubmit={createTeamLead} className="mt-8 grid gap-4 rounded-2xl border border-white/[0.08] bg-[#0b0d10] p-6 shadow-[0_18px_50px_rgba(0,0,0,.12)] sm:grid-cols-2 lg:grid-cols-4">
           <input required placeholder="Name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm outline-none" />
           <input required placeholder="Registration Number" value={form.registrationNumber} onChange={(event) => setForm({ ...form, registrationNumber: event.target.value })} className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm outline-none" />
           <input required minLength={PASSWORD_MIN_LENGTH} type="password" autoComplete="new-password" placeholder={`Password (${PASSWORD_MIN_LENGTH}+ characters)`} value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm outline-none" />
@@ -130,14 +135,14 @@ export default function TeamLeadsPage() {
           <button disabled={saving} className="rounded-xl bg-white px-4 py-3 text-sm font-medium text-black disabled:opacity-50 sm:col-span-2 lg:col-span-4">{saving ? "Creating..." : "Create Team Lead"}</button>
         </form>
 
-        <div className="mt-8 overflow-x-auto rounded-2xl border border-white/10 bg-[#0b0d10]">
+        <div className="mt-8 overflow-x-auto rounded-2xl border border-white/[0.08] bg-[#0b0d10] shadow-[0_18px_50px_rgba(0,0,0,.12)]">
           <table className="w-full min-w-[640px] text-left text-sm">
             <thead className="border-b border-white/10 text-xs uppercase tracking-[0.15em] text-white/30">
               <tr><th className="p-4">Name</th><th className="p-4">Registration</th><th className="p-4">Team</th><th className="p-4">Status</th><th className="p-4">Actions</th></tr>
             </thead>
             <tbody>
               {loading ? <tr><td colSpan={5} className="p-12 text-center text-white/40">Loading Team Leads...</td></tr> : teamLeads.map((lead) => (
-                <tr key={lead._id} className="border-b border-white/[0.06]"><td className="p-4">{lead.name || "-"}</td><td className="p-4 text-white/60">{lead.registrationNumber}</td><td className="p-4 text-white/60">{lead.team || "-"}</td><td className="p-4 text-white/60">{lead.isActive ? "Active" : "Inactive"}</td><td className="p-4"><div className="flex flex-wrap gap-2"><button type="button" onClick={() => void updateTeamLead(lead._id, { isActive: !lead.isActive }, lead.isActive ? "Team Lead deactivated." : "Team Lead activated.")} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/70">{lead.isActive ? "Deactivate" : "Activate"}</button><button type="button" onClick={() => setPasswordTarget(lead)} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/70">Reset password</button><button type="button" onClick={() => void deleteTeamLead(lead)} className="rounded-lg border border-red-400/20 px-3 py-2 text-xs text-red-200">Delete</button></div></td></tr>
+                <tr key={lead._id} className="border-b border-white/[0.06] transition hover:bg-white/[0.025]"><td className="p-4 font-medium text-white/85">{lead.name || "-"}</td><td className="p-4 text-white/60">{lead.registrationNumber}</td><td className="p-4"><span className="rounded-full border border-cyan-300/15 bg-cyan-300/[0.05] px-2.5 py-1 text-xs text-cyan-100/80">{lead.team || "-"}</span></td><td className="p-4"><span className={`rounded-full border px-2.5 py-1 text-xs ${lead.isActive ? "border-emerald-300/20 bg-emerald-300/[0.07] text-emerald-200" : "border-white/10 text-white/45"}`}>{lead.isActive ? "Active" : "Inactive"}</span></td><td className="p-4"><div className="flex flex-wrap gap-2"><button type="button" onClick={() => void updateTeamLead(lead._id, { isActive: !lead.isActive }, lead.isActive ? "Team Lead deactivated." : "Team Lead activated.")} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/70 transition hover:bg-white/[0.07]">{lead.isActive ? "Deactivate" : "Activate"}</button><button type="button" onClick={() => setPasswordTarget(lead)} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-white/70 transition hover:bg-white/[0.07]">Reset password</button><button type="button" onClick={() => void deleteTeamLead(lead)} className="rounded-lg border border-red-400/20 px-3 py-2 text-xs text-red-200 transition hover:bg-red-400/10">Delete</button></div></td></tr>
               ))}
               {!loading && teamLeads.length === 0 && <tr><td colSpan={5} className="p-12 text-center text-white/40">No Team Leads created yet.</td></tr>}
             </tbody>

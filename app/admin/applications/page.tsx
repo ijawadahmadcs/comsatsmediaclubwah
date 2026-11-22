@@ -2,6 +2,8 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
+import { ClipboardCheck } from "lucide-react";
+import AdminPageHeader from "@/components/AdminPageHeader";
 
 type Application = {
   _id: string;
@@ -191,17 +193,25 @@ export default function ApplicationsPage() {
   return (
     <main className="min-h-screen bg-[#08090b] px-5 py-16 text-white sm:px-10 lg:px-16">
       <div className="mx-auto max-w-7xl">
-        <p className="text-xs uppercase tracking-[0.3em] text-blue-300/60">
-          Admin · Intake
-        </p>
-        <h1 className="mt-4 text-4xl font-semibold tracking-tight">
-          Applications
-        </h1>
-        <p className="mt-3 text-sm text-white/40">
-          Review applications and confirm registration fees.
-        </p>
+        <AdminPageHeader eyebrow="Admin · Intake" title="Applications" description="Review applications, update statuses, and confirm registration fees." icon={ClipboardCheck} />
 
-        <div className="mt-8 flex flex-wrap gap-3">
+        {data && (
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[
+              ["Total", data.total],
+              ["Pending", statuses.includes(filters.status) ? data.applications.filter((item) => (item.status || "Pending") === "Pending").length : 0],
+              ["Accepted", data.applications.filter((item) => item.status === "Accepted").length],
+              ["Fee paid", data.applications.filter((item) => item.paymentStatus === "Paid").length],
+            ].map(([label, value]) => (
+              <div key={String(label)} className="rounded-xl border border-white/[0.08] bg-[#0b0d10] px-4 py-3">
+                <p className="text-[10px] uppercase tracking-[0.16em] text-white/35">{label}</p>
+                <p className="mt-2 text-2xl font-semibold">{value}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-8 flex flex-wrap gap-3 rounded-2xl border border-white/[0.08] bg-[#0b0d10] p-4">
           <input
             value={filters.search}
             onChange={(event) => updateFilter("search", event.target.value)}
@@ -291,7 +301,7 @@ export default function ApplicationsPage() {
           </p>
         ) : (
           <>
-            <div className={`mt-8 overflow-x-auto rounded-2xl border border-white/10 bg-[#0b0d10] transition-opacity ${isUpdating ? "opacity-60" : ""}`}>
+            <div className={`mt-5 overflow-x-auto rounded-2xl border border-white/[0.08] bg-[#0b0d10] shadow-[0_18px_50px_rgba(0,0,0,.12)] transition-opacity ${isUpdating ? "opacity-60" : ""}`}>
               <table className="w-full min-w-[980px] text-left text-sm">
                 <thead className="border-b border-white/10 text-xs uppercase tracking-[0.15em] text-white/30">
                   <tr>
@@ -322,11 +332,15 @@ export default function ApplicationsPage() {
                       </td>
                       <td className="p-4 text-white/55">{item.department}</td>
                       <td className="p-4 text-white/55">{item.areaOfInterest}</td>
-                      <td className="p-4 text-white/55">
-                        {item.status || "Pending"}
+                      <td className="p-4">
+                        <span className={`rounded-full border px-2.5 py-1 text-[11px] ${(item.status || "Pending") === "Accepted" ? "border-emerald-300/20 bg-emerald-300/[0.07] text-emerald-200" : (item.status || "Pending") === "Rejected" ? "border-red-300/20 bg-red-300/[0.07] text-red-200" : "border-amber-300/20 bg-amber-300/[0.07] text-amber-200"}`}>
+                          {item.status || "Pending"}
+                        </span>
                       </td>
-                      <td className="p-4 text-white/55">
-                        {item.paymentStatus || "Unpaid"}
+                      <td className="p-4">
+                        <span className={`rounded-full border px-2.5 py-1 text-[11px] ${(item.paymentStatus || "Unpaid") === "Paid" ? "border-cyan-300/20 bg-cyan-300/[0.07] text-cyan-200" : "border-white/10 bg-white/[0.03] text-white/50"}`}>
+                          {item.paymentStatus || "Unpaid"}
+                        </span>
                       </td>
                       <td className="p-4 text-white/40">
                         {new Date(item.createdAt).toLocaleDateString()}

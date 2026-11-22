@@ -124,7 +124,7 @@ export default function AdminLayout({
         />
       )}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-[min(18rem,88vw)] border-r border-white/10 bg-[#0b0d10] p-4 shadow-2xl transition-transform lg:translate-x-0 lg:p-5 ${open ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed inset-y-0 left-0 z-50 w-[min(18rem,88vw)] border-r border-white/[0.08] bg-[linear-gradient(180deg,#10161a_0%,#0b0d10_100%)] p-4 shadow-2xl transition-transform lg:translate-x-0 lg:p-5 ${open ? "translate-x-0" : "-translate-x-full"}`}
       >
         <div className="flex items-center justify-between">
           <Link
@@ -159,7 +159,7 @@ export default function AdminLayout({
               key={href}
               href={href}
               onClick={() => setOpen(false)}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] transition ${pathname === href ? "bg-white text-black" : "text-white/55 hover:bg-white/10 hover:text-white"}`}
+              className={`flex items-center gap-3 rounded-xl px-3 py-3 text-[13px] transition ${pathname === href ? "border border-blue-300/20 bg-blue-300/[0.12] text-blue-100 shadow-[0_8px_30px_rgba(59,130,246,.08)]" : "border border-transparent text-white/55 hover:border-white/[0.08] hover:bg-white/[0.05] hover:text-white"}`}
             >
               <Icon size={17} />
               {label}

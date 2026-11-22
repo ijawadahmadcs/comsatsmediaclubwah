@@ -3,6 +3,7 @@
 import { ChangeEvent, useEffect, useState } from "react";
 import Image from "next/image";
 import { ImagePlus, Trash2, Video } from "lucide-react";
+import AdminPageHeader from "@/components/AdminPageHeader";
 import { checkUploadFile, uploadDirectToCloudinary } from "@/lib/directUpload";
 import { UPLOAD_PURPOSES, formatMegabytes, type UploadPurpose } from "@/lib/mediaRules";
 
@@ -92,13 +93,13 @@ export default function WorkManagementPage() {
   return (
     <main className="min-h-screen bg-[#08090b] px-5 py-16 text-white sm:px-10 lg:px-16">
       <div className="mx-auto max-w-7xl">
-        <p className="text-xs uppercase tracking-[0.3em] text-blue-300/60">Admin · Portfolio</p>
-        <h1 className="mt-4 text-4xl font-semibold tracking-tight">Work Gallery</h1>
-        <p className="mt-3 text-sm text-white/40">
-          Upload the images (up to {formatMegabytes(UPLOAD_PURPOSES["work-image"].maxBytes)}) and videos (up to{" "}
-          {formatMegabytes(UPLOAD_PURPOSES["work-video"].maxBytes)}) shown on the Work page.
-        </p>
-        <div className="mt-8 flex flex-col gap-4 rounded-2xl border border-white/10 bg-[#0b0d10] p-5 sm:flex-row sm:items-center">
+        <AdminPageHeader
+          eyebrow="Admin · Portfolio"
+          title="Work Gallery"
+          description={`Upload the images (up to ${formatMegabytes(UPLOAD_PURPOSES["work-image"].maxBytes)}) and videos (up to ${formatMegabytes(UPLOAD_PURPOSES["work-video"].maxBytes)}) shown on the Work page.`}
+          icon={ImagePlus}
+        />
+        <div className="mt-8 flex flex-col gap-4 rounded-2xl border border-white/[0.08] bg-[#0b0d10] p-5 shadow-[0_18px_50px_rgba(0,0,0,.12)] sm:flex-row sm:items-center">
           <label className="flex min-h-12 flex-1 cursor-pointer items-center gap-3 rounded-xl border border-dashed border-white/20 px-4 text-sm text-white/55 transition hover:border-white/40 hover:text-white">
             <ImagePlus size={18} />
             <span className="truncate">{file ? file.name : "Choose image or video"}</span>
@@ -109,6 +110,13 @@ export default function WorkManagementPage() {
           </button>
         </div>
         {message && <p className="mt-4 text-sm text-blue-200">{message}</p>}
+        {!loading && (
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border border-white/[0.08] bg-[#0b0d10] px-4 py-3"><p className="text-[10px] uppercase tracking-[0.16em] text-white/35">Gallery items</p><p className="mt-2 text-2xl font-semibold">{assets.length}</p></div>
+            <div className="rounded-xl border border-white/[0.08] bg-[#0b0d10] px-4 py-3"><p className="text-[10px] uppercase tracking-[0.16em] text-white/35">Images</p><p className="mt-2 text-2xl font-semibold text-cyan-200">{assets.filter((asset) => asset.resourceType === "image").length}</p></div>
+            <div className="col-span-2 rounded-xl border border-white/[0.08] bg-[#0b0d10] px-4 py-3 sm:col-span-1"><p className="text-[10px] uppercase tracking-[0.16em] text-white/35">Videos</p><p className="mt-2 text-2xl font-semibold text-violet-200">{assets.filter((asset) => asset.resourceType === "video").length}</p></div>
+          </div>
+        )}
         {loading ? (
           <p className="py-20 text-center text-sm text-white/40">Loading gallery...</p>
         ) : assets.length === 0 ? (
@@ -116,7 +124,7 @@ export default function WorkManagementPage() {
         ) : (
           <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {assets.map((asset) => (
-              <article key={asset._id} className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
+              <article key={asset._id} className="group relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.03] transition duration-300 hover:-translate-y-0.5 hover:border-white/20">
                 {asset.resourceType === "video" ? (
                   <video src={asset.url} muted playsInline className="aspect-square w-full object-cover" />
                 ) : (

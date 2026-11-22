@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { History } from "lucide-react";
+import AdminPageHeader from "@/components/AdminPageHeader";
 
 type ActivityEntry = {
   _id: string;
@@ -66,11 +68,16 @@ export default function ActivityPage() {
   return (
     <main className="min-h-screen bg-[#08090b] px-5 py-16 text-white sm:px-10 lg:px-16">
       <div className="mx-auto max-w-7xl">
-        <p className="text-xs uppercase tracking-[0.3em] text-blue-300/60">Superadmin · Audit</p>
-        <h1 className="mt-4 text-4xl font-semibold tracking-tight">Activity</h1>
-        <p className="mt-3 text-sm text-white/40">Every change made by admins and Team Leads, newest first.</p>
+        <AdminPageHeader eyebrow="Superadmin · Audit" title="Activity" description="Every change made by admins and Team Leads, newest first." icon={History} />
         {message && <p className="mt-5 text-sm text-red-200">{message}</p>}
-        <div className="mt-8 overflow-x-auto rounded-2xl border border-white/10 bg-[#0b0d10]">
+        {data && (
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border border-white/[0.08] bg-[#0b0d10] px-4 py-3"><p className="text-[10px] uppercase tracking-[0.16em] text-white/35">Total entries</p><p className="mt-2 text-2xl font-semibold">{data.total}</p></div>
+            <div className="rounded-xl border border-white/[0.08] bg-[#0b0d10] px-4 py-3"><p className="text-[10px] uppercase tracking-[0.16em] text-white/35">This page</p><p className="mt-2 text-2xl font-semibold text-cyan-200">{data.entries.length}</p></div>
+            <div className="col-span-2 rounded-xl border border-white/[0.08] bg-[#0b0d10] px-4 py-3 sm:col-span-1"><p className="text-[10px] uppercase tracking-[0.16em] text-white/35">Current page</p><p className="mt-2 text-2xl font-semibold text-white/70">{page} / {totalPages}</p></div>
+          </div>
+        )}
+        <div className="mt-8 overflow-x-auto rounded-2xl border border-white/[0.08] bg-[#0b0d10] shadow-[0_18px_50px_rgba(0,0,0,.12)]">
           <table className="w-full min-w-[860px] text-left text-sm">
             <thead className="border-b border-white/10 text-xs uppercase tracking-[0.15em] text-white/30">
               <tr>
@@ -87,13 +94,13 @@ export default function ActivityPage() {
                 <tr><td colSpan={4} className="p-12 text-center text-white/40">No activity recorded yet.</td></tr>
               ) : (
                 data.entries.map((entry) => (
-                  <tr key={entry._id} className="border-b border-white/[0.06] align-top">
+                  <tr key={entry._id} className="border-b border-white/[0.06] align-top transition hover:bg-white/[0.025]">
                     <td className="whitespace-nowrap p-4 text-white/55">{new Date(entry.createdAt).toLocaleString()}</td>
                     <td className="p-4 text-white/75">
                       {entry.actorRegistrationNumber || entry.actorId || "-"}
                       {entry.actorRole && <span className="mt-1 block text-[10px] uppercase tracking-[0.15em] text-white/30">{entry.actorRole}</span>}
                     </td>
-                    <td className="p-4 text-white/75">{entry.action.replace(/_/g, " ")}</td>
+                    <td className="p-4"><span className="rounded-full border border-blue-300/15 bg-blue-300/[0.05] px-2.5 py-1 text-xs text-blue-100/80">{entry.action.replace(/_/g, " ")}</span></td>
                     <td className="p-4 text-xs leading-5 text-white/45">
                       {describeDetails(entry.details).map((line, index) => <p key={index} className="break-all">{line}</p>)}
                       {entry.targetId && <p className="text-white/25">{entry.targetType || "target"} {entry.targetId}</p>}

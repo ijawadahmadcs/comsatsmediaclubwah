@@ -2,6 +2,8 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import PasswordDialog from "@/components/PasswordDialog";
+import AdminPageHeader from "@/components/AdminPageHeader";
+import { Shield } from "lucide-react";
 import { PASSWORD_MIN_LENGTH } from "@/lib/password";
 
 type Admin = {
@@ -98,17 +100,16 @@ export default function AdminsPage() {
   return (
     <main className="min-h-screen bg-[#08090b] px-5 py-16 text-white sm:px-10 lg:px-16">
       <div className="mx-auto max-w-6xl">
-        <p className="text-xs uppercase tracking-[0.3em] text-blue-300/60">
-          Superadmin · Access
-        </p>
-        <h1 className="mt-4 text-4xl font-semibold">Admin Management</h1>
-        <p className="mt-3 text-sm text-white/40">
-          Decide who can access the CMS.
-        </p>
+        <AdminPageHeader eyebrow="Superadmin · Access" title="Admin Management" description="Create accounts and control who can access the CMS." icon={Shield} />
         {message && <p className="mt-5 text-sm text-blue-200">{message}</p>}
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-white/[0.08] bg-[#0b0d10] px-4 py-3"><p className="text-[10px] uppercase tracking-[0.16em] text-white/35">Admins</p><p className="mt-2 text-2xl font-semibold">{admins.length}</p></div>
+          <div className="rounded-xl border border-white/[0.08] bg-[#0b0d10] px-4 py-3"><p className="text-[10px] uppercase tracking-[0.16em] text-white/35">Active</p><p className="mt-2 text-2xl font-semibold text-emerald-200">{admins.filter((admin) => admin.isActive).length}</p></div>
+          <div className="col-span-2 rounded-xl border border-white/[0.08] bg-[#0b0d10] px-4 py-3 sm:col-span-1"><p className="text-[10px] uppercase tracking-[0.16em] text-white/35">Inactive</p><p className="mt-2 text-2xl font-semibold text-white/50">{admins.filter((admin) => !admin.isActive).length}</p></div>
+        </div>
         <form
           onSubmit={create}
-          className="mt-8 grid gap-4 rounded-2xl border border-white/10 bg-[#0b0d10] p-6 sm:grid-cols-4"
+          className="mt-8 grid gap-4 rounded-2xl border border-white/[0.08] bg-[#0b0d10] p-6 shadow-[0_18px_50px_rgba(0,0,0,.12)] sm:grid-cols-4"
         >
           <input
             required
@@ -141,7 +142,7 @@ export default function AdminsPage() {
             Add Admin
           </button>
         </form>
-        <div className="mt-8 overflow-x-auto rounded-2xl border border-white/10 bg-[#0b0d10]">
+        <div className="mt-8 overflow-x-auto rounded-2xl border border-white/[0.08] bg-[#0b0d10] shadow-[0_18px_50px_rgba(0,0,0,.12)]">
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead className="border-b border-white/10 text-xs uppercase tracking-[0.15em] text-white/30">
               <tr>
@@ -161,7 +162,7 @@ export default function AdminsPage() {
                 </tr>
               ) : (
                 admins.map((admin) => (
-                  <tr key={admin._id} className="border-b border-white/[0.06]">
+                  <tr key={admin._id} className="border-b border-white/[0.06] transition hover:bg-white/[0.025]">
                     <td className="p-4 text-white/80">{admin.name || "-"}</td>
                     <td className="p-4 text-white/60">
                       {admin.registrationNumber}
