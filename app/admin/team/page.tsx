@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Pencil, Plus, Trash2, X } from "lucide-react";
+import { Download, Pencil, Plus, Trash2, X } from "lucide-react";
 import { checkUploadFile, uploadDirectToCloudinary } from "@/lib/directUpload";
 
 type FormValues = {
@@ -116,6 +116,7 @@ export default function TeamManagementPage() {
   const [form, setForm] = useState<FormValues>(emptyForm);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const router = useRouter();
 
   async function loadMembers() {
@@ -166,6 +167,34 @@ export default function TeamManagementPage() {
 
   function closeForm() {
     if (!isSaving) setIsFormOpen(false);
+  }
+
+  async function downloadTeamPdf() {
+    setDownloadingPdf(true);
+    setFeedback({ type: "", message: "" });
+    try {
+      const response = await fetch("/api/admin/team/export-pdf");
+      if (!response.ok) {
+        const result = await response.json().catch(() => null);
+        throw new Error(result?.message || "Unable to download the team list.");
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "comsats-media-club-team-list.pdf";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (downloadError) {
+      setFeedback({
+        type: "error",
+        message: downloadError instanceof Error ? downloadError.message : "Unable to download the team list.",
+      });
+    } finally {
+      setDownloadingPdf(false);
+    }
   }
 
   function updateField(key: keyof FormValues, value: string) {
@@ -311,13 +340,24 @@ export default function TeamManagementPage() {
               Manage the people behind the vision.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={openAddForm}
-            className="inline-flex w-fit items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-medium text-black transition hover:bg-white/90"
-          >
-            <Plus size={16} /> Add Member
-          </button>
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+            <button
+              type="button"
+              onClick={() => void downloadTeamPdf()}
+              disabled={downloadingPdf || isLoading}
+              className="inline-flex w-fit items-center justify-center gap-2 rounded-full border border-cyan-300/25 px-5 py-3 text-sm font-medium text-cyan-100 transition hover:border-cyan-300/50 hover:bg-cyan-300/[0.07] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Download size={16} />
+              {downloadingPdf ? "Generating..." : "Download Team PDF"}
+            </button>
+            <button
+              type="button"
+              onClick={openAddForm}
+              className="inline-flex w-fit items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-medium text-black transition hover:bg-white/90"
+            >
+              <Plus size={16} /> Add Member
+            </button>
+          </div>
         </div>
 
         <AnimatePresence mode="wait">

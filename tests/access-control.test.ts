@@ -54,6 +54,7 @@ const ACCESS: Record<string, Partial<Record<Method, Access>>> = {
   "admin/recognition": { GET: "staff", PATCH: "staff" },
   "admin/stats": { GET: "staff" },
   "admin/team": { GET: "staff" },
+  "admin/team/export-pdf": { GET: "staff" },
   "admin/team-leads": { GET: "superadmin" },
   "admin/team-leads/[id]": { GET: "superadmin", PUT: "superadmin", DELETE: "superadmin" },
   "admin/team-leads/create": { POST: "superadmin" },
