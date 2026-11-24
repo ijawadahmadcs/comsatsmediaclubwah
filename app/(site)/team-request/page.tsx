@@ -16,5 +16,4 @@ const TeamRequest = () => {
     </div>
   )
 }
-
 export default TeamRequest

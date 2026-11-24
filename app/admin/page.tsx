@@ -22,6 +22,7 @@ type Stats = {
   totalEvents: number;
   crossTeamAssignments: number;
   teamCounts: { team: string; count: number }[];
+  performanceReportTeams: string[];
   recentApplications: {
     _id: string;
     fullName: string;
@@ -51,6 +52,8 @@ export default function AdminDashboardPage() {
   const [recognition, setRecognition] = useState<RecognitionState | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [downloadingReportTeam, setDownloadingReportTeam] = useState<string | null>(null);
+  const [reportDownloadError, setReportDownloadError] = useState("");
 
   async function loadStats() {
     setLoading(true);
@@ -91,6 +94,35 @@ export default function AdminDashboardPage() {
     const result = await response.json();
     if (response.ok) setRecognition({ ...recognition, revealWeek: result.revealWeek, revealMonth: result.revealMonth });
   }
+
+  async function downloadPerformanceReport(team: string) {
+    setDownloadingReportTeam(team);
+    setReportDownloadError("");
+    try {
+      const query = new URLSearchParams({ team });
+      const response = await fetch(`/api/admin/team/performance-pdf?${query}`);
+      if (!response.ok) {
+        const result = await response.json().catch(() => null);
+        throw new Error(result?.message || "Unable to download the performance report.");
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${team.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase() || "team"}-performance-ranking.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (downloadError) {
+      setReportDownloadError(
+        downloadError instanceof Error ? downloadError.message : "Unable to download the performance report.",
+      );
+    } finally {
+      setDownloadingReportTeam(null);
+    }
+  }
+
   if (error)
     return (
       <main className="min-h-screen bg-[#08090b] px-5 py-16 text-white">
@@ -185,6 +217,33 @@ export default function AdminDashboardPage() {
                 </div>
                 );
               })}
+            </div>
+          </section>
+        ) : null}
+        {stats?.performanceReportTeams.length ? (
+          <section className="mt-7 rounded-2xl border border-white/[0.08] bg-[#0b0d10] p-5 sm:p-6">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-blue-300/60">Team performance</p>
+              <h2 className="mt-2 text-lg font-medium">Download team reports</h2>
+              <p className="mt-2 text-sm text-white/40">Download the same member-ranking PDF available to each Team Lead.</p>
+            </div>
+            {reportDownloadError && <p className="mt-4 text-sm text-red-200">{reportDownloadError}</p>}
+            <div className="mt-5 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+              {stats.performanceReportTeams.map((team) => (
+                <button
+                  key={team}
+                  type="button"
+                  onClick={() => void downloadPerformanceReport(team)}
+                  disabled={downloadingReportTeam !== null}
+                  className="inline-flex items-center justify-between gap-3 rounded-xl border border-white/[0.08] px-4 py-3 text-left text-sm text-white/70 transition hover:border-blue-300/25 hover:bg-blue-300/[0.05] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <span className="truncate">{team}</span>
+                  <span className="inline-flex shrink-0 items-center gap-2 text-xs text-blue-200">
+                    <Download size={15} />
+                    {downloadingReportTeam === team ? "Generating..." : "Download PDF"}
+                  </span>
+                </button>
+              ))}
             </div>
           </section>
         ) : null}

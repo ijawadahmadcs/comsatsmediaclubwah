@@ -1,9 +1,32 @@
 import { describe, expect, it } from "vitest";
 import { buildTeamPerformanceRows } from "@/lib/teamPerformance";
+import { buildTeamPerformancePdf, teamPerformancePdfFilename } from "@/lib/teamPerformancePdf";
 import { buildClubMemberIdOrder } from "@/lib/teamMembers";
 import mongoose from "mongoose";
 
 describe("team performance ranking", () => {
+  it("builds the ranking PDF used by team report downloads", () => {
+    const pdf = buildTeamPerformancePdf("Photography", [{
+      memberId: "member-1",
+      name: "Ayesha",
+      registrationNumber: "FA20-BCS-001",
+      clubMemberId: "CMC-001",
+      department: "Computer Science",
+      role: "Member",
+      assignedEvents: 2,
+      attendedEvents: 2,
+      attendancePercent: 100,
+      averageRating: 5,
+      ratingCount: 2,
+      score: 100,
+    }]);
+
+    expect(pdf.subarray(0, 8).toString("ascii")).toBe("%PDF-1.4");
+    expect(pdf.toString("ascii")).toContain("Photography Performance");
+    expect(pdf.toString("ascii")).toContain("Ayesha");
+    expect(teamPerformancePdfFilename("Photography")).toBe("photography-performance-ranking.pdf");
+  });
+
   it("assigns IDs by hierarchy and skips advisors", () => {
     const member = (name: string, role: string) => ({
       _id: new mongoose.Types.ObjectId(),

@@ -55,6 +55,7 @@ const ACCESS: Record<string, Partial<Record<Method, Access>>> = {
   "admin/stats": { GET: "staff" },
   "admin/team": { GET: "staff" },
   "admin/team/export-pdf": { GET: "staff" },
+  "admin/team/performance-pdf": { GET: "staff" },
   "admin/team-leads": { GET: "superadmin" },
   "admin/team-leads/[id]": { GET: "superadmin", PUT: "superadmin", DELETE: "superadmin" },
   "admin/team-leads/create": { POST: "superadmin" },
@@ -176,6 +177,12 @@ describe("API route access", () => {
     await signIn(role);
     const response = await callRoute(route, method);
     expect(response.status).toBe(403);
+  });
+
+  it("allows staff to reach team report validation", async () => {
+    await signIn("admin");
+    const response = await callRoute("admin/team/performance-pdf", "GET");
+    expect(response.status).toBe(400);
   });
 });
 

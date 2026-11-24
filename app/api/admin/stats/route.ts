@@ -3,6 +3,7 @@ import { serverError } from "@/lib/api";
 import { requireApiStaff } from "@/lib/auth";
 import connectToDatabase from "@/lib/mongodb";
 import { findVisibleMembers } from "@/lib/teamMembers";
+import Admin from "@/models/Admin";
 import Application from "@/models/Application";
 import Event from "@/models/Event";
 import TeamMember from "@/models/TeamMember";
@@ -12,7 +13,7 @@ export async function GET() {
   if (!auth.ok) return auth.response;
   try {
     await connectToDatabase();
-    const [members, totalApplications, pendingApplications, acceptedApplications, recentApplications, totalEvents, teamCounts, crossTeamEvents] = await Promise.all([
+    const [members, totalApplications, pendingApplications, acceptedApplications, recentApplications, totalEvents, teamCounts, crossTeamEvents, teamLeads] = await Promise.all([
       findVisibleMembers(),
       Application.countDocuments(),
       Application.countDocuments({ status: { $in: ["Pending", null] } }),
@@ -26,7 +27,14 @@ export async function GET() {
         { $project: { _id: 0, team: "$_id", count: 1 } },
       ]),
       Event.find().select("team assignedMembers").populate({ path: "assignedMembers", select: "team" }).lean(),
+      Admin.find({ role: "teamlead", isActive: true }).select("team").lean(),
     ]);
+    const performanceReportTeams = Array.from(new Set([
+      ...teamCounts.map(({ team }) => team),
+      ...teamLeads
+        .map(({ team }) => team)
+        .filter((team): team is string => typeof team === "string" && team.trim().length > 0),
+    ])).sort((left, right) => left.localeCompare(right));
     let crossTeamAssignments = 0;
     for (const event of crossTeamEvents) {
       for (const member of event.assignedMembers as Array<{ team?: string }>) {
@@ -42,6 +50,7 @@ export async function GET() {
       totalEvents,
       crossTeamAssignments,
       teamCounts,
+      performanceReportTeams,
       recentApplications: recentApplications.map((application) => ({ ...application, status: application.status || "Pending" })),
     });
   } catch (error) {
